@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>bdc6b8eb-4dfc-4616-8db9-738327e65664</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>Fue</RootNamespace>
     <AssemblyName>Fue</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>

@@ -1,0 +1,29 @@
+﻿<!--Template basics-->
+{{{value}}} - Shaver like
+@value - Razor like
+{value} - ?
+{{value}} - would clash with frontend
+
+<!--Binding-->
+<a fs-bind:href="link">{{{name}}}</a>
+
+<!--For-cycle-->
+<li fs-for="item in items">
+    {{{item.Name}}}
+</li>
+
+<!--Condition-->
+<div fs-if="someCondition">Value</div>
+
+<!--Discriminated Union-->
+type UserAccess =
+    | Anonymous
+    | Admin of section:string
+
+    <!--Pipe variant-->
+    <div fs-case="item|Anonymous">Anonymous</div>
+    <div fs-case="item|Admin(section)">{{{section}}}</div>
+    
+    <!--Two attributes variant-->
+    <div fs-du="item" fs-case="Anonymous">Anonymous</div>
+    <div fs-du="item" fs-case="Admin(section)">{{{section}}}</div>
