@@ -34,6 +34,9 @@ let parseTemplateValue text =
         | _ -> t |> SimpleValue
     parse text
 
+//let parseTemplateNode node =
+    
+
 //let forCycleNode value =
 //    let groups = "(.+) in (.+)" ==> value
 //    match groups.Count with
