@@ -12,8 +12,8 @@ type TemplateValue =
 type TemplateNode =
     | ForCycle of item:string * source:TemplateValue
     | IfCondition of source:TemplateValue
-    | DiscriminatedUnion of union:string * case:string * extract:string list option
-    | Include of src:string * closures:((string * string) list)
+    | DiscriminatedUnion of union:string * case:string * extract:string list
+    | Include of src:string * localData:((string * TemplateValue) list)
 
 
 

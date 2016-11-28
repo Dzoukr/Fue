@@ -1,8 +1,6 @@
 ﻿<!--Template basics-->
-{{{value}}} - Shaver like
-@value - Razor like
-{value} - ?
-{{value}} - would clash with frontend
+{{{value}}} - Static value
+{{{function()}}} - Function value
 
 <!--For-cycle-->
 <li fs-for="item in items">
@@ -10,7 +8,7 @@
 </li>
 
 <!--Condition-->
-<div fs-if="someCondition | not">Value</div>
+<div fs-if="someCondition">Value</div>
 
 <!--Discriminated Union-->
 type UserAccess =
@@ -22,4 +20,4 @@ type UserAccess =
     <div fs-du="item" fs-case="Admin(section)">{{{section}}}</div>
 
 <!--Nested Templating-->
-<fs-include fs-src="something.html" fs-data="item=section,x=item.Name"/>
+<fs-include fs-src="something.html" fs-data="item=loadData();x=item.Name"/>

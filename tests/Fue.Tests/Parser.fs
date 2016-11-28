@@ -46,19 +46,40 @@ let ``Parses simple value with white spaces`` () =
             [TemplateValue.SimpleValue("a"); TemplateValue.SimpleValue("b")]))
 
 [<Test>]
-let ``Parses for-cycle`` () = 
+let ``Parses for-cycle value`` () = 
     "x in y" 
     |> parseForCycle 
     |> should equal (TemplateNode.ForCycle("x", TemplateValue.SimpleValue("y")) |> Some)
 
 [<Test>]
-let ``Parses for-cycle with function`` () = 
+let ``Parses for-cycle value with function`` () = 
     "x in y(z)" 
     |> parseForCycle 
     |> should equal (TemplateNode.ForCycle("x", TemplateValue.Function("y", [TemplateValue.SimpleValue("z")])) |> Some)
 
 [<Test>]
-let ``Does not parse illegal for-cycle`` () = 
+let ``Does not parse illegal for-cycle value`` () = 
     "in y" 
     |> parseForCycle 
     |> should equal None
+
+[<Test>]
+let ``Parses DU case with no extraction`` () = 
+    let result = "Case" |> parseDUExtract
+    fst result |> should equal "Case"
+    snd result |> should equal []
+
+[<Test>]
+let ``Parses DU case with extract`` () = 
+    "Case(x, _)" 
+    |> parseDUExtract
+    |> should equal ("Case", ["x";"_"])
+
+[<Test>]
+let ``Parses include data`` () = 
+    let expected = [
+        ("x", TemplateValue.SimpleValue("y"))
+        ("z", TemplateValue.Function("run", [TemplateValue.SimpleValue("a")]))
+    ]
+    "x=y;z=run(a)" |> parseIncludeData |> should equal expected
+
