@@ -15,24 +15,9 @@ type TemplateNode =
     | DiscriminatedUnion of union:string * case:string * extract:string list option
     | Include of src:string * closures:((string * string) list)
 
-let (==>) regex value =
-    let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
-    regex.Match(value).Groups
 
-let parseTemplateValue text =
-    let clean (t:string) = t.Trim()
-    let rec parse t =
-        let groups = "(.+?)\((.*)\)" ==> t
-        match groups.Count with
-        | 3 -> 
-            let fnName = groups.[1].Value |> clean
-            let parts = 
-                groups.[2].Value.Split([|','|], StringSplitOptions.RemoveEmptyEntries) 
-                |> Array.map (clean >> parse) 
-                |> Array.toList
-            Function(fnName, parts)
-        | _ -> t |> SimpleValue
-    parse text
+
+
 
 //let parseTemplateNode node =
     

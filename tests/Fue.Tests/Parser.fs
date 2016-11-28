@@ -1,25 +1,26 @@
-﻿module Fue.Tests.Core
+﻿module Fue.Tests.Parser
 
 open NUnit.Framework
 open FsUnit
 open Fue.Core
+open Fue.Parser
 
 [<Test>]
 let ``Parses simple value`` () = 
     "value" 
-    |> Fue.Core.parseTemplateValue 
+    |> parseTemplateValue 
     |> should equal (TemplateValue.SimpleValue("value"))
 
 [<Test>]
 let ``Parses function value`` () = 
     "value()" 
-    |> Fue.Core.parseTemplateValue 
+    |> parseTemplateValue 
     |> should equal (TemplateValue.Function("value", []))
 
 [<Test>]
 let ``Parses function value with params`` () = 
     "value(a,b)" 
-    |> Fue.Core.parseTemplateValue 
+    |> parseTemplateValue 
     |> should equal (
         TemplateValue.Function("value", 
             [TemplateValue.SimpleValue("a"); TemplateValue.SimpleValue("b")]))
@@ -27,7 +28,7 @@ let ``Parses function value with params`` () =
 [<Test>]
 let ``Parses function value with inner function`` () = 
     "value(a,b(x),c())" 
-    |> Fue.Core.parseTemplateValue 
+    |> parseTemplateValue 
     |> should equal (
         TemplateValue.Function("value", 
             [
@@ -39,7 +40,25 @@ let ``Parses function value with inner function`` () =
 [<Test>]
 let ``Parses simple value with white spaces`` () = 
     "value (a, b)" 
-    |> Fue.Core.parseTemplateValue 
+    |> parseTemplateValue 
     |> should equal (
         TemplateValue.Function("value", 
             [TemplateValue.SimpleValue("a"); TemplateValue.SimpleValue("b")]))
+
+[<Test>]
+let ``Parses for-cycle`` () = 
+    "x in y" 
+    |> parseForCycle 
+    |> should equal (TemplateNode.ForCycle("x", TemplateValue.SimpleValue("y")) |> Some)
+
+[<Test>]
+let ``Parses for-cycle with function`` () = 
+    "x in y(z)" 
+    |> parseForCycle 
+    |> should equal (TemplateNode.ForCycle("x", TemplateValue.Function("y", [TemplateValue.SimpleValue("z")])) |> Some)
+
+[<Test>]
+let ``Does not parse illegal for-cycle`` () = 
+    "in y" 
+    |> parseForCycle 
+    |> should equal None
