@@ -10,20 +10,16 @@
 </li>
 
 <!--Condition-->
-<div fs-if="someCondition">Value</div>
+<div fs-if="someCondition | not">Value</div>
 
 <!--Discriminated Union-->
 type UserAccess =
     | Anonymous
     | Admin of section:string
 
-    <!--Pipe variant-->
-    <div fs-case="item|Anonymous">Anonymous</div>
-    <div fs-case="item|Admin(section)">{{{section}}}</div>
-    
     <!--Two attributes variant-->
     <div fs-du="item" fs-case="Anonymous">Anonymous</div>
     <div fs-du="item" fs-case="Admin(section)">{{{section}}}</div>
 
 <!--Nested Templating-->
-<fs-include fs-src="something.html" fs-data="section"/>
+<fs-include fs-src="something.html" fs-data="item=section,x=item.Name"/>
