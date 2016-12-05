@@ -18,6 +18,38 @@ let ``Parses function value`` () =
     |> should equal (TemplateValue.Function("value", []))
 
 [<Test>]
+let ``Parses piped function value`` () = 
+    "value |> fun1 |> fun2" 
+    |> parseTemplateValue 
+    |> should equal (
+        TemplateValue.Function("fun2", 
+            [
+                TemplateValue.Function("fun1", [TemplateValue.SimpleValue("value")])
+            ]))
+
+[<Test>]
+let ``Parses piped curried function value`` () = 
+    "value |> fun1 y |> fun2 x" 
+    |> parseTemplateValue 
+    |> should equal (
+        TemplateValue.Function("fun2", 
+            [
+                TemplateValue.SimpleValue("x")
+                TemplateValue.Function("fun1", [TemplateValue.SimpleValue("y"); TemplateValue.SimpleValue("value")])
+            ]))
+
+[<Test>]
+let ``Parses piped curried function value with first function`` () = 
+    "value() |> fun1 y" 
+    |> parseTemplateValue 
+    |> should equal (
+        TemplateValue.Function("fun1", 
+            [
+                TemplateValue.SimpleValue("y")
+                TemplateValue.Function("value", [])
+            ]))
+
+[<Test>]
 let ``Parses function value with params`` () = 
     "value(a,b)" 
     |> parseTemplateValue 

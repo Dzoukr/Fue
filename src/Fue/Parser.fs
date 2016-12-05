@@ -12,22 +12,33 @@ let private (==>) regex value =
 let private clean (t:string) = t.Trim()
 let private split (separator:char) (s:string) = s.Split([|separator|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
 let private splitToTuple char = split char >> (fun ls -> ls.[0], ls.[1])
+let private toFunctionParams t = t |> split ',' |> List.map clean
+let private splitByCurrying t = 
+    let parts = t |> split ' ' |> List.map clean
+    match parts.Length with
+    | 1 -> t, []
+    | _ -> parts.[0], [ for i in 1..parts.Length - 1 do yield parts.[i] ] |> List.map SimpleValue
 
-let private (|ThreePart|_|) (groups:GroupCollection) =
+let private (|TwoPartsMatch|_|) (groups:GroupCollection) =
     match groups.Count with
     | 3 ->
         let fnName = groups.[1].Value |> clean
-        let parts = groups.[2].Value |> split ',' |> List.map clean
+        let parts = groups.[2].Value |> clean
         (fnName, parts) |> Some
     | _ -> None
 
 let parseTemplateValue text =
     let rec parse t =
-        match "(.+?)\((.*)\)" ==> t with
-        | ThreePart(fnName, parts) ->
-            let parts = parts |> List.map parse
-            Function(fnName, parts)
-        | _ -> t |> SimpleValue
+        match "(.+)\|\>(.+)" ==> t with
+        | TwoPartsMatch(parts, fnName) ->
+            let f,p = fnName |> splitByCurrying
+            Function(f, p @ [parts |> parse])
+        | _ -> 
+            match "(.+?)\((.*)\)" ==> t with
+            | TwoPartsMatch(fnName, parts) ->
+                let parts = parts |> toFunctionParams |> List.map parse
+                Function(fnName, parts)
+            | _ -> t |> SimpleValue
     parse text
 
 let parseForCycle text =
@@ -38,7 +49,7 @@ let parseForCycle text =
 
 let parseDUExtract text =
     match "(.+?)\((.*)\)" ==> text with
-    | ThreePart(caseName, parts) -> caseName, parts
+    | TwoPartsMatch(caseName, parts) -> caseName, (parts |> toFunctionParams)
     | _ -> text, []
 
 let parseIncludeData text =
