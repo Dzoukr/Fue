@@ -59,7 +59,6 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <None Include="paket.references" />
-    <Compile Include="Rop.fs" />
     <Compile Include="Sandbox.fs" />
     <None Include="Sandbox.html" />
     <Compile Include="Core.fs" />

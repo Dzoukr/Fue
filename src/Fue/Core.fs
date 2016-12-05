@@ -3,7 +3,6 @@
 open System
 open FSharp.Data
 open System.Text.RegularExpressions
-open Rop
 
 type TemplateValue =
     | SimpleValue of name:string
