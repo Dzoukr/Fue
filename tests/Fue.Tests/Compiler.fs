@@ -20,10 +20,24 @@ type RecordWithFun = {
     Fun : int -> int
 }
 
+type Class() =
+    member this.Name = "Roman"
+    static member Name_Static = "Roman Static"
+    member this.Y(x) = x * 2
+    static member YStatic(x) = x * 2
+
 [<Test>]
 let ``Compiles simple value`` () = 
     let data = init |> add "value" "Roman"
     SimpleValue("value")
+    |> compile data
+    |> should equal "Roman"
+
+[<Test>]
+let ``Compiles class value`` () = 
+    let cls = new Class()
+    let data = init |> add "cls" cls
+    SimpleValue("cls.Name")
     |> compile data
     |> should equal "Roman"
 
@@ -72,5 +86,13 @@ let ``Compiles function with param`` () =
     let fun1 = fun x -> x + 10
     let data = init |> add "fun1" fun1 |> add "x" 90
     Function("fun1", [SimpleValue("x")])
+    |> compile data
+    |> should equal 100
+
+[<Test>]
+let ``Compiles function with more params`` () = 
+    let fun1 = fun x y -> x + y
+    let data = init |> add "fun1" fun1 |> add "x" 90 |> add "y" 10
+    Function("fun1", [SimpleValue("x"); SimpleValue("y")])
     |> compile data
     |> should equal 100
