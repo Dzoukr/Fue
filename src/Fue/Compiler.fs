@@ -6,6 +6,7 @@ open StringUtils
 open Microsoft.FSharp.Reflection
 
 let private isRecord obj = FSharpType.IsRecord(obj.GetType())
+let private isTuple obj = FSharpType.IsTuple(obj.GetType())
 let private isFunction obj = FSharpType.IsFunction(obj.GetType())
 let private getRecordValue key obj =
     FSharpType.GetRecordFields(obj.GetType()) 
@@ -13,6 +14,11 @@ let private getRecordValue key obj =
     |> Array.map (fun x -> x.GetValue(obj)) 
     |> Array.head
 
+let private toObjectTuple value =
+    let props = FSharpValue.GetTupleFields(value)
+    let types = [| for i in 1..props.Length do yield obj().GetType() |]
+    let typ = FSharpType.MakeTupleType(types)
+    FSharpValue.MakeTuple(props, typ)
 
 let private compileSimpleValue data key =
     match data |> Data.tryGet key with
@@ -30,20 +36,23 @@ let private compileSimpleValue data key =
             let record = data |> get recName
             props |> List.fold foldFn (record, obj()) |> snd
 
+let private boxed obj =
+    match obj |> isTuple with
+    | true -> obj |> toObjectTuple
+    | false -> obj
+
+let private boxedArr arr = 
+    match arr |> Array.length with
+    | 0 -> [| () |> box |]
+    | _ -> arr |> Array.map boxed
+
 let compile data value =
-    let parsOrUnit arr = 
-        match arr |> Array.length with
-        | 0 -> [| () |> box |]
-        | _ -> arr
-    
     let rec comp v =
         match v with
         | SimpleValue(valueName) -> valueName |> compileSimpleValue data
         | Function(fnName, pars) -> 
-            let p = pars |> List.map comp |> List.toArray |> parsOrUnit
+            let p = pars |> List.map comp |> List.toArray |> boxedArr
             let fn = data |> get fnName
             let invoke = fn.GetType().GetMethod("Invoke")
             invoke.Invoke(fn, p)
-
-            
     comp value

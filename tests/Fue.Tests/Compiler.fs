@@ -55,7 +55,6 @@ let ``Compiles parameterless function`` () =
     |> compile data
     |> should equal "Roman"
 
-
 [<Test>]
 let ``Compiles function with param`` () = 
     let fun1 = fun x -> x + 10
