@@ -16,6 +16,10 @@ type Record = {
     Nested : Nested
 }
 
+type RecordWithFun = {
+    Fun : int -> int
+}
+
 [<Test>]
 let ``Compiles simple value`` () = 
     let data = init |> add "value" "Roman"
@@ -30,6 +34,14 @@ let ``Compiles record value`` () =
     SimpleValue("rec.Name")
     |> compile data
     |> should equal "Roman"
+
+[<Test>]
+let ``Compiles record with function`` () = 
+    let record = { Fun = (fun x -> x + 10) }
+    let data = init |> add "rec" record |> add "param" 90
+    Function("rec.Fun", [SimpleValue("param")])
+    |> compile data
+    |> should equal 100
 
 [<Test>]
 let ``Compiles nested record value`` () = 

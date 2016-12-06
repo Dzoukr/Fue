@@ -20,7 +20,7 @@ let private toObjectTuple value =
     let typ = FSharpType.MakeTupleType(types)
     FSharpValue.MakeTuple(props, typ)
 
-let private compileSimpleValue data key =
+let private search data key =
     match data |> Data.tryGet key with
     | Some(value) -> value // direct match
     | None ->
@@ -49,10 +49,10 @@ let private boxedArr arr =
 let compile data value =
     let rec comp v =
         match v with
-        | SimpleValue(valueName) -> valueName |> compileSimpleValue data
+        | SimpleValue(valueName) -> valueName |> search data
         | Function(fnName, pars) -> 
             let p = pars |> List.map comp |> List.toArray |> boxedArr
-            let fn = data |> get fnName
+            let fn = fnName |> search data
             let invoke = fn.GetType().GetMethod("Invoke")
             invoke.Invoke(fn, p)
     comp value
