@@ -61,8 +61,11 @@
     <None Include="paket.references" />
     <Compile Include="Sandbox.fs" />
     <None Include="Sandbox.html" />
+    <Compile Include="StringUtils.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="Parser.fs" />
+    <Compile Include="Data.fs" />
+    <Compile Include="Compiler.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

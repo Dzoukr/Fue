@@ -85,9 +85,10 @@
   </Choose>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Parser.fs" />
     <None Include="paket.references" />
     <Content Include="App.config" />
+    <Compile Include="Parser.fs" />
+    <Compile Include="Compiler.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

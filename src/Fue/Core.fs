@@ -1,9 +1,5 @@
 ﻿module Fue.Core
 
-open System
-open FSharp.Data
-open System.Text.RegularExpressions
-
 type TemplateValue =
     | SimpleValue of name:string
     | Function of name:string * parameters:TemplateValue list
@@ -57,14 +53,4 @@ type TemplateNode =
 //
 //
 //    
-
-
-// data
-let init = Map.empty
-let add (key:string) (value:obj) (map:Map<string, obj>) = map.Add(key, value)
-let get (key:string) (map:Map<string, obj>) = map.TryFind key
-
-let x = fun y -> y + 10
-
-init |> add "tuple" (1,2) |> add "record" "abc" |> add "function" x
 

@@ -2,22 +2,18 @@
 
 open System
 open Core
-open FSharp.Data
+open StringUtils
 open System.Text.RegularExpressions
 
 let private (==>) regex value =
     let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
     regex.Match(value).Groups
 
-let private clean (t:string) = t.Trim()
-let private split (separator:char) (s:string) = s.Split([|separator|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
-let private splitToTuple char = split char >> (fun ls -> ls.[0], ls.[1])
+
 let private toFunctionParams t = t |> split ',' |> List.map clean
 let private splitByCurrying t = 
-    let parts = t |> split ' ' |> List.map clean
-    match parts.Length with
-    | 1 -> t, []
-    | _ -> parts.[0], [ for i in 1..parts.Length - 1 do yield parts.[i] ] |> List.map SimpleValue
+    let f,s = t |> splitToFirstAndList ' '
+    f, (s |> List.map SimpleValue)
 
 let private (|TwoPartsMatch|_|) (groups:GroupCollection) =
     match groups.Count with
@@ -57,5 +53,3 @@ let parseIncludeData text =
     |> split ';' 
     |> List.map (splitToTuple '=') 
     |> List.map (fun (k,v) -> k, parseTemplateValue(v))
-    
-    
