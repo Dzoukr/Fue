@@ -18,6 +18,12 @@ let ``Parses function value`` () =
     |> should equal (TemplateValue.Function("value", []))
 
 [<Test>]
+let ``Parses method`` () = 
+    "record.Method()" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("record.Method", []))
+
+[<Test>]
 let ``Parses piped function value`` () = 
     "value |> fun1 |> fun2" 
     |> parseTemplateValue 

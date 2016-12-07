@@ -20,11 +20,16 @@ type RecordWithFun = {
     Fun : int -> int
 }
 
+type NestedClass() =
+    member this.Value = "Nested"
+
 type Class() =
     member this.Name = "Roman"
+    member this.Nested = new NestedClass()
     static member Name_Static = "Roman Static"
     member this.Y(x) = x * 2
     static member YStatic(x) = x * 2
+
 
 [<Test>]
 let ``Compiles simple value`` () = 
@@ -40,6 +45,38 @@ let ``Compiles class value`` () =
     SimpleValue("cls.Name")
     |> compile data
     |> should equal "Roman"
+
+[<Test>]
+let ``Compiles class method`` () = 
+    let cls = new Class()
+    let data = init |> add "cls" cls |> add "x" 10
+    Function("cls.Y", [SimpleValue("x")])
+    |> compile data
+    |> should equal 20
+
+[<Test>]
+let ``Compiles class static method`` () = 
+    let cls = new Class()
+    let data = init |> add "cls" cls |> add "x" 10
+    Function("cls.YStatic", [SimpleValue("x")])
+    |> compile data
+    |> should equal 20
+
+[<Test>]
+let ``Compiles class static value`` () = 
+    let cls = new Class()
+    let data = init |> add "cls" cls
+    SimpleValue("cls.Name_Static")
+    |> compile data
+    |> should equal "Roman Static"
+
+[<Test>]
+let ``Compiles nested class value`` () = 
+    let cls = new Class()
+    let data = init |> add "cls" cls
+    SimpleValue("cls.Nested.Value")
+    |> compile data
+    |> should equal "Nested"
 
 [<Test>]
 let ``Compiles record value`` () = 
