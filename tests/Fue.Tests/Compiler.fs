@@ -15,9 +15,14 @@ type Record = {
     Age : int
     Nested : Nested
 }
+with 
+    member this.Show = this.Name
+    member this.ShowFunc() = this.Name
+    member this.Calc x = x * 2
 
 type RecordWithFun = {
     Fun : int -> int
+    NoParam: unit -> string
 }
 
 type NestedClass() =
@@ -29,7 +34,6 @@ type Class() =
     static member Name_Static = "Roman Static"
     member this.Y(x) = x * 2
     static member YStatic(x) = x * 2
-
 
 [<Test>]
 let ``Compiles simple value`` () = 
@@ -87,12 +91,44 @@ let ``Compiles record value`` () =
     |> should equal "Roman"
 
 [<Test>]
+let ``Compiles record member`` () = 
+    let record = { Name = "Roman"; Age = 35; Nested = { Value = 123 } }
+    let data = init |> add "rec" record
+    SimpleValue("rec.Show")
+    |> compile data
+    |> should equal "Roman"
+
+[<Test>]
+let ``Compiles record member parameterless method`` () = 
+    let record = { Name = "Roman"; Age = 35; Nested = { Value = 123 } }
+    let data = init |> add "rec" record
+    Function("rec.ShowFunc", [])
+    |> compile data
+    |> should equal "Roman"
+
+[<Test>]
+let ``Compiles record member method with params`` () = 
+    let record = { Name = "Roman"; Age = 35; Nested = { Value = 123 } }
+    let data = init |> add "rec" record |> add "y" 50
+    Function("rec.Calc", [SimpleValue("y")])
+    |> compile data
+    |> should equal 100
+
+[<Test>]
 let ``Compiles record with function`` () = 
-    let record = { Fun = (fun x -> x + 10) }
+    let record = { Fun = (fun x -> x + 10); NoParam = (fun() -> "Roman") }
     let data = init |> add "rec" record |> add "param" 90
     Function("rec.Fun", [SimpleValue("param")])
     |> compile data
     |> should equal 100
+
+[<Test>]
+let ``Compiles record with parameterless function`` () = 
+    let record = { Fun = (fun x -> x + 10); NoParam = (fun() -> "Roman") }
+    let data = init |> add "rec" record |> add "param" 90
+    Function("rec.NoParam", [])
+    |> compile data
+    |> should equal "Roman"
 
 [<Test>]
 let ``Compiles nested record value`` () = 

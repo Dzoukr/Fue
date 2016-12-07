@@ -6,35 +6,15 @@ open StringUtils
 open Microsoft.FSharp.Reflection
 open System.Reflection
 
-let private isRecord obj = FSharpType.IsRecord(obj.GetType())
 let private isTuple obj = FSharpType.IsTuple(obj.GetType())
-let private isFunction obj = FSharpType.IsFunction(obj.GetType())
-let private isClass obj = obj.GetType().IsClass
-let private isValue obj = obj.GetType().IsValueType
 
 type private Return =
+    | NotFound
     | Value of obj
-    | Method of obj * System.Reflection.MethodInfo
+    | Method of obj * MethodInfo
 
-let private (|Record|_|) obj =
-    match obj |> isRecord with
-    | true -> Some obj
-    | false -> None
-
-let private (|Class|_|) obj =
-    match obj |> isClass with
-    | true -> Some obj
-    | false -> None
-
-let private getProperties = function
-    | Record(rc) -> rc.GetType() |> FSharpType.GetRecordFields
-    | Class(cls) -> cls.GetType().GetProperties()
-
-let private getMethods = function
-    | Record(ob) | Class(ob) -> 
-        let methods = ob.GetType().GetMethods()
-        let members = ob.GetType().GetMembers()
-        methods
+let private getProperties ob = ob.GetType().GetProperties() 
+let private getMethods ob = ob.GetType().GetMethods()
 
 let private getValue key value =
     getProperties value
@@ -45,7 +25,7 @@ let private getValue key value =
 let private getMethod key value =
     getMethods value
     |> Array.filter (fun x -> x.Name = key)
-    |> Array.head
+    |> Array.tryHead
 
 let private toObjectTuple value =
     let props = FSharpValue.GetTupleFields(value)
@@ -54,26 +34,23 @@ let private toObjectTuple value =
     FSharpValue.MakeTuple(props, typ)
 
 let private search data key =
-    match data |> Data.tryGet key with
+    match data |> tryGet key with
     | Some(value) -> value |> Return.Value // direct match
     | None ->
         let name,props = key |> splitToFirstAndList '.'
         match props |> List.length with
-        | 0 -> "NOT FOUND TODO" |> box |> Return.Value
+        | 0 -> Return.NotFound
         | _ -> 
             let foldFn (acc:Return) (item:string) =
                 match acc with
                 | Value(a) ->
-                    match a |> getValue item with
-                    | Some(value) -> value |> Return.Value
-                    | None -> 
-                        let mi = a |> getMethod item
-                        Return.Method(a, mi)
-                | Method(_) -> acc
-
+                    match a |> getValue item, a |> getMethod item with
+                    | Some(value),_ -> value |> Return.Value
+                    | _,Some(mi) -> Return.Method(a, mi)
+                    | _ -> Return.NotFound
+                | _ -> acc
             let structure = data |> get name |> Return.Value
             props |> List.fold foldFn structure
-            //props |> List.fold (fun a i -> a |> getValue i) structure
 
 let private boxed obj =
     match obj |> isTuple with
@@ -82,22 +59,32 @@ let private boxed obj =
 
 let private boxedArr arr = 
     match arr |> Array.length with
-    | 0 -> [| () |> box |], [| obj().GetType() |]
-    | _ -> (arr |> Array.map boxed), (arr |> Array.map (fun x -> x.GetType()))
+    | 0 -> [| () |> box |], [||], [| obj().GetType() |]
+    | _ -> 
+        let boxed = arr |> Array.map boxed
+        let types = arr |> Array.map (fun x -> x.GetType())
+        boxed, boxed, types
+
+let private getFunctionInvoke (types:System.Type []) func =
+    if types.Length > 1 then
+        func.GetType().GetMethod("Invoke", types)
+    else
+        func.GetType().GetMethod("Invoke")
 
 let private extract = function
     | Value(obj) -> obj
-    | Method(_) -> "NOT FOUND" |> box
+    | _ -> "NOT FOUND TODO" |> box
 
 let compile data value =
     let rec comp v =
         match v with
         | SimpleValue(valueName) -> valueName |> search data |> extract
         | Function(fnName, pars) -> 
-            let parameters,types = pars |> List.map comp |> List.toArray |> boxedArr
+            let funcParams, methodParams, types = pars |> List.map comp |> List.toArray |> boxedArr
             match fnName |> search data with
-            | Value(func) ->
-                let invoke = if parameters.Length < 2 then func.GetType().GetMethod("Invoke") else func.GetType().GetMethod("Invoke", types)
-                invoke.Invoke(func, parameters)
-            | Method(ob, mi) -> mi.Invoke(ob, parameters)
+            | Value(func) -> 
+                let invoke = func |> getFunctionInvoke types
+                invoke.Invoke(func, funcParams)
+            | Method(ob, mi) -> mi.Invoke(ob, methodParams)
+            | NotFound -> failwith "Not implemented yet"
     comp value
