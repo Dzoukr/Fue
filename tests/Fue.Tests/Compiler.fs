@@ -169,3 +169,12 @@ let ``Compiles function with more params`` () =
     Function("fun1", [SimpleValue("x"); SimpleValue("y")])
     |> compile data
     |> should equal 100
+
+[<Test>]
+let ``Compiles function with nested functions`` () = 
+    let addFun = fun x y -> x + y
+    let multFun x y = x * y 
+    let data = init |> add "add" addFun |> add "mult" multFun |> add "x" 3 |> add "y" 2 |> add "z" 5
+    Function("add", [SimpleValue("x"); Function("mult", [SimpleValue("y"); SimpleValue("z")])])
+    |> compile data
+    |> should equal 13

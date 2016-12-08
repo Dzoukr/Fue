@@ -9,7 +9,6 @@ let private (==>) regex value =
     let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
     regex.Match(value).Groups
 
-
 let private toFunctionParams t = t |> split ',' |> List.map clean
 let private splitByCurrying t = 
     let f,s = t |> splitToFirstAndList ' '
@@ -37,19 +36,20 @@ let parseTemplateValue text =
             | _ -> t |> SimpleValue
     parse text
 
-let parseForCycle text =
-    let groups = "(.+) in (.+)" ==> text
-    match groups.Count with
-    | 3 -> ForCycle(groups.[1].Value, groups.[2].Value |> parseTemplateValue) |> Some
+let parseForCycle forAttr =
+    match "(.+) in (.+)" ==> forAttr with
+    | TwoPartsMatch(item, source) -> ForCycle(item, source |> parseTemplateValue) |> Some
     | _ -> None
 
-let parseDUExtract text =
-    match "(.+?)\((.*)\)" ==> text with
-    | TwoPartsMatch(caseName, parts) -> caseName, (parts |> toFunctionParams)
-    | _ -> text, []
+let parseDiscriminatedUnion duAttr caseAttr =
+    match "(.+?)\((.*)\)" ==> caseAttr with
+    | TwoPartsMatch(caseName, parts) -> DiscriminatedUnion(duAttr, caseName, (parts |> toFunctionParams))
+    | _ -> DiscriminatedUnion(duAttr, caseAttr, [])
 
-let parseIncludeData text =
-    text 
-    |> split ';' 
-    |> List.map (splitToTuple '=') 
-    |> List.map (fun (k,v) -> k, parseTemplateValue(v))
+let parseInclude srcAttr dataAttr =
+    let localData = 
+        dataAttr 
+        |> split ';' 
+        |> List.map (splitToTuple '=') 
+        |> List.map (fun (k,v) -> k, parseTemplateValue(v))
+    Include(srcAttr, localData)

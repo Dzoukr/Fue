@@ -103,21 +103,21 @@ let ``Does not parse illegal for-cycle value`` () =
 
 [<Test>]
 let ``Parses DU case with no extraction`` () = 
-    let result = "Case" |> parseDUExtract
-    fst result |> should equal "Case"
-    snd result |> should equal []
-
+    "Case" 
+    |> parseDiscriminatedUnion "DU"
+    |> should equal (TemplateNode.DiscriminatedUnion("DU", "Case", []))
+    
 [<Test>]
 let ``Parses DU case with extract`` () = 
     "Case(x, _)" 
-    |> parseDUExtract
-    |> should equal ("Case", ["x";"_"])
+    |> parseDiscriminatedUnion "DU"
+    |> should equal (TemplateNode.DiscriminatedUnion("DU", "Case", ["x";"_"]))
 
 [<Test>]
-let ``Parses include data`` () = 
-    let expected = [
+let ``Parses include`` () = 
+    let expected = TemplateNode.Include("src.html", [
         ("x", TemplateValue.SimpleValue("y"))
         ("z", TemplateValue.Function("run", [TemplateValue.SimpleValue("a")]))
-    ]
-    "x=y;z=run(a)" |> parseIncludeData |> should equal expected
+    ])
+    "x=y;z=run(a)" |> parseInclude "src.html" |> should equal expected
 
