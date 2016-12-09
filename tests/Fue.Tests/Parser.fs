@@ -4,6 +4,8 @@ open NUnit.Framework
 open FsUnit
 open Fue.Core
 open Fue.Parser
+open FSharp.Data
+open Fue.Rop
 
 [<Test>]
 let ``Parses simple value`` () = 
@@ -102,23 +104,24 @@ let ``Does not parse illegal for-cycle value`` () =
     |> should equal None
 
 [<Test>]
-let ``Parses DU case with no extraction`` () = 
+let ``Parses discriminated union case with no extraction`` () = 
     "Case" 
     |> parseDiscriminatedUnion "DU"
     |> should equal (TemplateNode.DiscriminatedUnion("DU", "Case", []))
     
 [<Test>]
-let ``Parses DU case with extract`` () = 
+let ``Parses discriminiated case with extract`` () = 
     "Case(x, _)" 
     |> parseDiscriminatedUnion "DU"
     |> should equal (TemplateNode.DiscriminatedUnion("DU", "Case", ["x";"_"]))
 
 [<Test>]
 let ``Parses include`` () = 
-    let expected = TemplateNode.Include("src.html", [
-        ("x", TemplateValue.SimpleValue("y"))
-        ("z", TemplateValue.Function("run", [TemplateValue.SimpleValue("a")]))
-    ])
+    let expected = TemplateNode.Include("src.html", 
+                    [
+                        ("x", TemplateValue.SimpleValue("y"))
+                        ("z", TemplateValue.Function("run", [TemplateValue.SimpleValue("a")]))
+                    ])
     "x=y;z=run(a)" |> parseInclude "src.html" |> should equal expected
 
 [<Test>]
@@ -126,4 +129,32 @@ let ``Parses include with no data`` () =
     let expected = TemplateNode.Include("src.html", [])
     "" |> parseInclude "src.html" |> should equal expected
 
+let parseNodeSuccess = parseNode >> extract >> Option.get
 
+[<Test>]
+let ``Parses for cycle node`` () = 
+    let expected = TemplateNode.ForCycle("i", TemplateValue.SimpleValue("list"))
+    HtmlNode.NewElement("a", [("fs-for","i in list")])
+    |> parseNodeSuccess 
+    |> should equal expected
+
+[<Test>]
+let ``Parses if condition node`` () = 
+    let expected = TemplateNode.IfCondition(TemplateValue.SimpleValue("boolVal"))
+    HtmlNode.NewElement("a", [("fs-if","boolVal")])
+    |> parseNodeSuccess 
+    |> should equal expected
+
+[<Test>]
+let ``Parses discriminated union node`` () = 
+    let expected = TemplateNode.DiscriminatedUnion("union", "case", ["a";"_"])
+    HtmlNode.NewElement("a", [("fs-du","union");("fs-case","case(a,_)")])
+    |> parseNodeSuccess 
+    |> should equal expected
+
+[<Test>]
+let ``Parses include node`` () = 
+    let expected = TemplateNode.Include("zdroj.html", [("lambda", TemplateValue.SimpleValue("zdrojLambdy"))])
+    HtmlNode.NewElement("fs-include", [("fs-src","zdroj.html");("fs-data","lambda=zdrojLambdy")])
+    |> parseNodeSuccess 
+    |> should equal expected
