@@ -121,3 +121,9 @@ let ``Parses include`` () =
     ])
     "x=y;z=run(a)" |> parseInclude "src.html" |> should equal expected
 
+[<Test>]
+let ``Parses include with no data`` () = 
+    let expected = TemplateNode.Include("src.html", [])
+    "" |> parseInclude "src.html" |> should equal expected
+
+
