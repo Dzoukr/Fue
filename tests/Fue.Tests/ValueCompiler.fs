@@ -1,10 +1,10 @@
-﻿module Fue.Tests.Compiler
+﻿module Fue.Tests.ValueCompiler
 
 open NUnit.Framework
 open FsUnit
 open Fue.Core
 open Fue.Data
-open Fue.Compiler
+open Fue.ValueCompiler
 open Fue.Rop
 
 type Nested = {

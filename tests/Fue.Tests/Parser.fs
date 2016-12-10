@@ -158,3 +158,10 @@ let ``Parses include node`` () =
     HtmlNode.NewElement("fs-include", [("fs-src","zdroj.html");("fs-data","lambda=zdrojLambdy")])
     |> parseNodeSuccess 
     |> should equal expected
+
+[<Test>]
+let ``Parses text for replacement`` () = 
+    let expected = [("abc","{{{abc}}}");("def","{{{ def }}}")]
+    "{{{abc}}} xxx {{{ def }}} {{{}}} {{{   }}}"
+    |> parseTextForReplacement 
+    |> should equal expected

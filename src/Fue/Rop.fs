@@ -11,6 +11,8 @@ type Error =
     | ValueExpectedToBeSimple of source:obj
     // Parser
     | CannotParseForCycle of string
+    // Runner
+    | ValueExpectedToBeBoolean of value:obj
 
 let explain = function
     // General
@@ -18,9 +20,11 @@ let explain = function
     // Compiler
     | CannotExtractProperty(key) -> sprintf "Cannot extract property after \".\" symbol from \"%s\"" key
     | NoMethodOrPropertyFound(source, name) -> sprintf "No property or method named \"%s\" found for \"%A\"" name source
-    | ValueExpectedToBeSimple(source) -> sprintf "Value \"%A\" was expected to simple value, not method" source
+    | ValueExpectedToBeSimple(source) -> sprintf "Value \"%A\" is expected to be simple value, not method" source
     // Parser
     | CannotParseForCycle(value) -> sprintf "Cannot parse For-cycle logic from value \"%s\"" value
+    // Runner
+    | ValueExpectedToBeBoolean(value) -> sprintf "Value \"%A\" is expected to be boolean" value
 
 type Result<'s> =
     | Success of 's

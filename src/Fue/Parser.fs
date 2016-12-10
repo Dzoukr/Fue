@@ -56,7 +56,6 @@ let parseInclude srcAttr dataAttr =
         |> List.map (fun (k,v) -> k, parseTemplateValue(v))
     Include(srcAttr, localData)
 
-
 let private getAttributeValue attr (node:HtmlNode) = Option.bind (fun (v:HtmlAttribute) -> v.Value() |> Some) (node.TryGetAttribute(attr)) 
 let private (|ForCycle|_|) = getAttributeValue "fs-for"
 let private (|IfCondition|_|) = getAttributeValue "fs-if"
@@ -78,3 +77,8 @@ let parseNode (node:HtmlNode) =
     | Include(src, data) -> parseInclude src data |> someSuccess
     | _ -> None |> success
 
+let parseTextForReplacement text = 
+    let regex = new Regex("{{{(.*?)}}}", RegexOptions.IgnoreCase)
+    [for m in regex.Matches(text) do yield m.Groups] 
+    |> List.map (fun g -> (g.[1].Value |> clean), g.[0].Value)
+    |> List.filter (fun x -> fst x <> "")
