@@ -68,6 +68,7 @@
     <Compile Include="Data.fs" />
     <Compile Include="ValueCompiler.fs" />
     <Compile Include="Runner.fs" />
+    <Compile Include="TemplateCompiler.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

@@ -61,7 +61,8 @@
     <None Include="paket.references" />
     <Content Include="App.config" />
     <Compile Include="Parser.fs" />
-    <Compile Include="Compiler.fs" />
+    <Compile Include="ValueCompiler.fs" />
+    <Compile Include="TemplateCompiler.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

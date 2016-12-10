@@ -77,8 +77,8 @@ let parseNode (node:HtmlNode) =
     | Include(src, data) -> parseInclude src data |> someSuccess
     | _ -> None |> success
 
-let parseTextForReplacement text = 
+let parseTemplateText text = 
     let regex = new Regex("{{{(.*?)}}}", RegexOptions.IgnoreCase)
     [for m in regex.Matches(text) do yield m.Groups] 
-    |> List.map (fun g -> (g.[1].Value |> clean), g.[0].Value)
-    |> List.filter (fun x -> fst x <> "")
+    |> List.map (fun g -> g.[0].Value, (g.[1].Value |> clean))
+    |> List.filter (fun x -> snd x <> "")

@@ -160,8 +160,8 @@ let ``Parses include node`` () =
     |> should equal expected
 
 [<Test>]
-let ``Parses text for replacement`` () = 
-    let expected = [("abc","{{{abc}}}");("def","{{{ def }}}")]
+let ``Parses template text`` () = 
+    let expected = [("{{{abc}}}","abc");("{{{ def }}}","def")]
     "{{{abc}}} xxx {{{ def }}} {{{}}} {{{   }}}"
-    |> parseTextForReplacement 
+    |> parseTemplateText 
     |> should equal expected
