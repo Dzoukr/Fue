@@ -158,8 +158,8 @@ let ``Parses include node`` () =
     |> should equal expected
 
 [<Test>]
-let ``Parses template text`` () = 
+let ``Parses text interpolations`` () = 
     let expected = [("{{{abc}}}","abc");("{{{ def }}}","def")]
     "{{{abc}}} xxx {{{ def }}} {{{}}} {{{   }}}"
-    |> parseTemplateText 
+    |> parseTextInterpolations 
     |> should equal expected

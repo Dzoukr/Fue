@@ -6,29 +6,11 @@ open StringUtils
 open Microsoft.FSharp.Reflection
 open System.Reflection
 open Rop
+open Reflection
 
 type private Return =
     | Value of obj
     | Method of obj * MethodInfo
-
-let private getValue key value =
-    value.GetType().GetProperties()
-    |> Array.filter (fun x -> x.Name = key) 
-    |> Array.map (fun x -> x.GetValue(value)) 
-    |> Array.tryHead
-
-let private getMethod key value =
-    value.GetType().GetMethods()
-    |> Array.filter (fun x -> x.Name = key)
-    |> Array.tryHead
-
-let private isTuple obj = FSharpType.IsTuple(obj.GetType())
-
-let private toObjectTuple value =
-    let props = FSharpValue.GetTupleFields(value)
-    let types = [| for _ in 1..props.Length do yield obj().GetType() |]
-    let typ = FSharpType.MakeTupleType(types)
-    FSharpValue.MakeTuple(props, typ)
 
 let private search data key =
     match data |> tryGet key with
@@ -62,18 +44,13 @@ let private boxedArr arr =
         let types = arr |> Array.map (fun x -> x.GetType())
         boxed, boxed, types
 
-let private getFunctionInvoke (types:System.Type []) func =
-    if types.Length > 1 then
-        func.GetType().GetMethod("Invoke", types)
-    else
-        func.GetType().GetMethod("Invoke")
-
 let private extractSimpleValue value = 
     match value with
     | Success(Value(obj)) -> obj |> success
     | Success(Method(obj,_)) -> ValueExpectedToBeSimple(obj) |> fail
     | Failure(f) -> f |> Failure
 
+/// Compiles template value into obj
 let compile data value =
     catch(fun _ ->
         let rec comp v =

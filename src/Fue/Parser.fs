@@ -16,7 +16,6 @@ let private (==>) regex value =
     let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
     regex.Match(value).Groups
 
-let private toFunctionParams t = t |> split ',' |> List.map clean
 let private splitByCurrying t = 
     let f,s = t |> splitToFirstAndList ' '
     f, (s |> List.map SimpleValue)
@@ -38,7 +37,7 @@ let parseTemplateValue text =
         | _ -> 
             match "(.+?)\((.*)\)" ==> t with
             | TwoPartsMatch(fnName, parts) ->
-                let parts = parts |> toFunctionParams |> List.map parse
+                let parts = parts |> splitToFunctionParams |> List.map parse
                 Function(fnName, parts)
             | _ -> t |> SimpleValue
     parse text
@@ -50,7 +49,7 @@ let parseForCycleAttribute forAttr =
 
 let parseUnionCaseAttribute caseAttr =
     match "(.+?)\((.*)\)" ==> caseAttr with
-    | TwoPartsMatch(caseName, parts) -> caseName, (parts |> toFunctionParams)
+    | TwoPartsMatch(caseName, parts) -> caseName, (parts |> splitToFunctionParams)
     | _ -> caseAttr, []
 
 let parseIncludeDataAttribute dataAttr =
@@ -82,7 +81,7 @@ let parseNode (node:HtmlNode) =
     | Include(src, data) -> Include(src, (data |> parseIncludeDataAttribute)) |> someSuccess
     | _ -> None |> success
 
-let parseTemplateText text = 
+let parseTextInterpolations text = 
     let regex = new Regex("{{{(.*?)}}}", RegexOptions.IgnoreCase)
     [for m in regex.Matches(text) do yield m.Groups] 
     |> List.map (fun g -> g.[0].Value, (g.[1].Value |> clean))

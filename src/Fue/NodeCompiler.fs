@@ -21,21 +21,17 @@ let private checkExtractsLength (extracts:string list) (values:obj []) =
     | x, y when x >= y -> (extracts, values) |> success 
     | x, y -> ListOfDUExtractionIsLongerThanCaseValues(x, y) |> fail
         
-
 let private bindIf f t b  = if b then t() else (f |> success)
-
 let private toTuples = List.map (fun (x:HtmlAttribute) -> x.Name(), x.Value())
+
+let private toList item = [item]
 let private cleanIf (attr:HtmlAttribute) = attr.Name() <> Parser.ifAttr
 let private cleanFor (attr:HtmlAttribute) = attr.Name() <> Parser.forAttr
 let private cleanDu (attr:HtmlAttribute) = attr.Name() <> Parser.unionSourceAttr && attr.Name() <> Parser.unionCaseAttr
 let private cleanNone (attr:HtmlAttribute) = true
-
 let private compileAttributes data = List.map (fun (n,v) -> n, TemplateCompiler.compile data v)
-    
 let private prepare data cleanFunc = List.filter cleanFunc >> toTuples >> compileAttributes data
-    
 
-let private toList item = [item]
 let private foldResults results =
     let foldFn acc item =
         match acc, item with
@@ -55,6 +51,7 @@ let extractCase case (extracts:string list) union =
             (true,[ for i in [0..vals.Length - 1] do yield ex.[i], values.[i] ])
         )
 
+/// Applies attributes/interpolation logic onto Html node tree
 let compile data (source:HtmlNode) =
     let rec comp data source  =
         Parser.parseNode(source)

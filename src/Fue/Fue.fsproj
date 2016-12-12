@@ -62,6 +62,7 @@
     <None Include="Sandbox.html" />
     <Compile Include="Rop.fs" />
     <Compile Include="StringUtils.fs" />
+    <Compile Include="Reflection.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="Data.fs" />
