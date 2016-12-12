@@ -25,9 +25,10 @@ let private checkExtractsLength (extracts:string list) (values:obj []) =
 let private bindIf f t b  = if b then t() else (f |> success)
 
 let private toTuples = List.map (fun (x:HtmlAttribute) -> x.Name(), x.Value())
-let private cleanIfAttributes = List.filter (fun (x:HtmlAttribute) -> x.Name() <> "fs-if") >> toTuples
-let private cleanForCycleAttributes = List.filter (fun (x:HtmlAttribute) -> x.Name() <> "fs-for") >> toTuples
-let private cleanUnionAttributes = List.filter (fun (x:HtmlAttribute) -> x.Name() <> "fs-du" && x.Name() <> "fs-case") >> toTuples
+let private cleanIfAttributes = List.filter (fun (x:HtmlAttribute) -> x.Name() <> Parser.ifAttr) >> toTuples
+let private cleanForCycleAttributes = List.filter (fun (x:HtmlAttribute) -> x.Name() <> Parser.forAttr) >> toTuples
+let private cleanUnionAttributes = 
+    List.filter (fun (x:HtmlAttribute) -> x.Name() <> Parser.unionSourceAttr && x.Name() <> Parser.unionCaseAttr) >> toTuples
 
 let private toList item = [item]
 let private foldResults results =
@@ -83,7 +84,7 @@ let compile data (source:HtmlNode) =
                 >>= (fun (isMatch, dataToAdd) ->
                     if isMatch then
                         let attrs = source.Attributes() |> cleanUnionAttributes
-                        let newData = data |> addBatch dataToAdd
+                        let newData = data |> addMany dataToAdd
                         source.Elements() |> List.map (comp newData) |> foldResults
                         >>=> (fun elms ->
                             HtmlNode.NewElement(source.Name(), attrs, elms) |> toList

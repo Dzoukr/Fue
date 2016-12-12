@@ -117,17 +117,15 @@ let ``Parses discriminiated case with extract`` () =
 
 [<Test>]
 let ``Parses include`` () = 
-    let expected = TemplateNode.Include("src.html", 
-                    [
+    let expected =  [
                         ("x", TemplateValue.SimpleValue("y"))
                         ("z", TemplateValue.Function("run", [TemplateValue.SimpleValue("a")]))
-                    ])
-    "x=y;z=run(a)" |> parseInclude "src.html" |> should equal expected
+                    ]
+    "x=y;z=run(a)" |> parseIncludeDataAttribute |> should equal expected
 
 [<Test>]
 let ``Parses include with no data`` () = 
-    let expected = TemplateNode.Include("src.html", [])
-    "" |> parseInclude "src.html" |> should equal expected
+    "" |> parseIncludeDataAttribute |> should equal []
 
 let parseNodeSuccess = parseNode >> extract >> Option.get
 

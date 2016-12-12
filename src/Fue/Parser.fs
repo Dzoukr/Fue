@@ -7,6 +7,11 @@ open System.Text.RegularExpressions
 open FSharp.Data
 open Rop
 
+let forAttr = "fs-for"
+let ifAttr = "fs-if"
+let unionSourceAttr = "fs-du"
+let unionCaseAttr = "fs-case"
+
 let private (==>) regex value =
     let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
     regex.Match(value).Groups
@@ -48,19 +53,17 @@ let parseUnionCaseAttribute caseAttr =
     | TwoPartsMatch(caseName, parts) -> caseName, (parts |> toFunctionParams)
     | _ -> caseAttr, []
 
-let parseInclude srcAttr dataAttr =
-    let localData = 
+let parseIncludeDataAttribute dataAttr =
         dataAttr 
         |> split ';' 
         |> List.map (splitToTuple '=') 
         |> List.map (fun (k,v) -> k, parseTemplateValue(v))
-    Include(srcAttr, localData)
 
 let private getAttributeValue attr (node:HtmlNode) = Option.bind (fun (v:HtmlAttribute) -> v.Value() |> Some) (node.TryGetAttribute(attr)) 
-let private (|ForCycle|_|) = getAttributeValue "fs-for"
-let private (|IfCondition|_|) = getAttributeValue "fs-if"
+let private (|ForCycle|_|) = getAttributeValue forAttr
+let private (|IfCondition|_|) = getAttributeValue ifAttr
 let private (|DiscriminatedUnion|_|) (node:HtmlNode) = 
-    match node.TryGetAttribute("fs-du"), node.TryGetAttribute("fs-case") with
+    match node.TryGetAttribute(unionSourceAttr), node.TryGetAttribute(unionCaseAttr) with
     | Some(du), Some(case) -> (du.Value(), case.Value()) |> Some
     | _ -> None
 let private (|Include|_|) (node:HtmlNode) = 
@@ -76,7 +79,7 @@ let parseNode (node:HtmlNode) =
     | DiscriminatedUnion(du, case) -> 
         let c, extr = case |> parseUnionCaseAttribute 
         DiscriminatedUnion((du |> parseTemplateValue), c, extr) |> someSuccess
-    | Include(src, data) -> parseInclude src data |> someSuccess
+    | Include(src, data) -> Include(src, (data |> parseIncludeDataAttribute)) |> someSuccess
     | _ -> None |> success
 
 let parseTemplateText text = 

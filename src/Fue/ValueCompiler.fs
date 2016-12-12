@@ -7,25 +7,22 @@ open Microsoft.FSharp.Reflection
 open System.Reflection
 open Rop
 
-let private isTuple obj = FSharpType.IsTuple(obj.GetType())
-
 type private Return =
     | Value of obj
     | Method of obj * MethodInfo
 
-let private getProperties ob = ob.GetType().GetProperties() 
-let private getMethods ob = ob.GetType().GetMethods()
-
 let private getValue key value =
-    getProperties value
+    value.GetType().GetProperties()
     |> Array.filter (fun x -> x.Name = key) 
     |> Array.map (fun x -> x.GetValue(value)) 
     |> Array.tryHead
 
 let private getMethod key value =
-    getMethods value
+    value.GetType().GetMethods()
     |> Array.filter (fun x -> x.Name = key)
     |> Array.tryHead
+
+let private isTuple obj = FSharpType.IsTuple(obj.GetType())
 
 let private toObjectTuple value =
     let props = FSharpValue.GetTupleFields(value)
