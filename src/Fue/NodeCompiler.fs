@@ -25,10 +25,15 @@ let private checkExtractsLength (extracts:string list) (values:obj []) =
 let private bindIf f t b  = if b then t() else (f |> success)
 
 let private toTuples = List.map (fun (x:HtmlAttribute) -> x.Name(), x.Value())
-let private cleanIfAttributes = List.filter (fun (x:HtmlAttribute) -> x.Name() <> Parser.ifAttr) >> toTuples
-let private cleanForCycleAttributes = List.filter (fun (x:HtmlAttribute) -> x.Name() <> Parser.forAttr) >> toTuples
-let private cleanUnionAttributes = 
-    List.filter (fun (x:HtmlAttribute) -> x.Name() <> Parser.unionSourceAttr && x.Name() <> Parser.unionCaseAttr) >> toTuples
+let private cleanIf (attr:HtmlAttribute) = attr.Name() <> Parser.ifAttr
+let private cleanFor (attr:HtmlAttribute) = attr.Name() <> Parser.forAttr
+let private cleanDu (attr:HtmlAttribute) = attr.Name() <> Parser.unionSourceAttr && attr.Name() <> Parser.unionCaseAttr
+let private cleanNone (attr:HtmlAttribute) = true
+
+let private compileAttributes data = List.map (fun (n,v) -> n, TemplateCompiler.compile data v)
+    
+let private prepare data cleanFunc = List.filter cleanFunc >> toTuples >> compileAttributes data
+    
 
 let private toList item = [item]
 let private foldResults results =
@@ -59,7 +64,7 @@ let compile data (source:HtmlNode) =
                 boolValue |> ValueCompiler.compile data
                 >>= checkIsBool
                 >>= bindIf [] (fun _ ->
-                    let attrs = source.Attributes() |> cleanIfAttributes
+                    let attrs = source.Attributes() |> prepare data cleanIf
                     source.Elements() |> List.map (comp data) |> foldResults
                     >>=> (fun elms ->
                         HtmlNode.NewElement(source.Name(), attrs, elms) |> toList
@@ -70,7 +75,7 @@ let compile data (source:HtmlNode) =
                 >>= checkIsIterable
                 >>= (fun list ->
                     list |> Seq.map (fun l ->
-                        let attrs = source.Attributes() |> cleanForCycleAttributes
+                        let attrs = source.Attributes() |> prepare data cleanFor
                         let dataWithItem = data |> add item l
                         source.Elements() |> List.map (comp dataWithItem) |> foldResults
                         >>=> (fun elms ->
@@ -83,7 +88,7 @@ let compile data (source:HtmlNode) =
                 >>= extractCase case extracts
                 >>= (fun (isMatch, dataToAdd) ->
                     if isMatch then
-                        let attrs = source.Attributes() |> cleanUnionAttributes
+                        let attrs = source.Attributes() |> prepare data cleanDu
                         let newData = data |> addMany dataToAdd
                         source.Elements() |> List.map (comp newData) |> foldResults
                         >>=> (fun elms ->
@@ -102,7 +107,8 @@ let compile data (source:HtmlNode) =
                 | name ->
                     source.Elements() |> List.map (comp data) |> foldResults
                     >>=> (fun elms ->
-                        HtmlNode.NewElement(name, source.Attributes() |> toTuples, elms) |> toList
+                        let attrs = source.Attributes() |> prepare data cleanNone
+                        HtmlNode.NewElement(name, attrs, elms) |> toList
                     )
         )
     comp data source

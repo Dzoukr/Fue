@@ -82,3 +82,12 @@ let ``Ignores discriminated union with different case`` () =
     node 
     |> compileToString data
     |> should equal "START"
+
+
+[<Test>]
+let ``Compiles attribute values`` () = 
+    let node = HtmlNode.Parse("""<div id="{{{who}}}">{{{me}}}</div>""").[0]
+    let data = init |> add "who" "Roman" |> add "me" "Dzoukr"
+    node 
+    |> compileToString data
+    |> should equal """<div id="Roman">Dzoukr</div>"""
