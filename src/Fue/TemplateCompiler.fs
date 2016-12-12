@@ -6,7 +6,7 @@ open StringUtils
 open Rop
 
 let private toStringValue = function
-    | Success(v) -> v |> string
+    | Success(v:obj) -> v |> string
     | Failure(errors) -> "CHYBA TODO"
 
 let private toTemplateValues (original, value) = original, (value |> Parser.parseTemplateValue)

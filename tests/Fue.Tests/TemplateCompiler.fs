@@ -6,6 +6,7 @@ open Fue.Core
 open Fue.Data
 open Fue.TemplateCompiler
 open Fue.Rop
+open System.Globalization
 
 [<Test>]
 let ``Compiles single value`` () = 

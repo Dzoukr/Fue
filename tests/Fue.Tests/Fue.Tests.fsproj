@@ -63,6 +63,7 @@
     <Compile Include="Parser.fs" />
     <Compile Include="ValueCompiler.fs" />
     <Compile Include="TemplateCompiler.fs" />
+    <Compile Include="NodeCompiler.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
