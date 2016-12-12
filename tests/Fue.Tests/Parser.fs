@@ -88,32 +88,32 @@ let ``Parses simple value with white spaces`` () =
 [<Test>]
 let ``Parses for-cycle value`` () = 
     "x in y" 
-    |> parseForCycle 
+    |> parseForCycleAttribute 
     |> should equal (TemplateNode.ForCycle("x", TemplateValue.SimpleValue("y")) |> Some)
 
 [<Test>]
 let ``Parses for-cycle value with function`` () = 
     "x in y(z)" 
-    |> parseForCycle 
+    |> parseForCycleAttribute 
     |> should equal (TemplateNode.ForCycle("x", TemplateValue.Function("y", [TemplateValue.SimpleValue("z")])) |> Some)
 
 [<Test>]
 let ``Does not parse illegal for-cycle value`` () = 
     "in y" 
-    |> parseForCycle 
+    |> parseForCycleAttribute 
     |> should equal None
 
 [<Test>]
 let ``Parses discriminated union case with no extraction`` () = 
-    "Case" 
-    |> parseDiscriminatedUnion "DU"
-    |> should equal (TemplateNode.DiscriminatedUnion("DU", "Case", []))
+    let res = "Case" |> parseUnionCaseAttribute
+    res |> fst |> should equal "Case"
+    res |> snd |> should equal []
     
 [<Test>]
 let ``Parses discriminiated case with extract`` () = 
     "Case(x, _)" 
-    |> parseDiscriminatedUnion "DU"
-    |> should equal (TemplateNode.DiscriminatedUnion("DU", "Case", ["x";"_"]))
+    |> parseUnionCaseAttribute
+    |> should equal ("Case", ["x";"_"])
 
 [<Test>]
 let ``Parses include`` () = 
@@ -147,7 +147,7 @@ let ``Parses if condition node`` () =
 
 [<Test>]
 let ``Parses discriminated union node`` () = 
-    let expected = TemplateNode.DiscriminatedUnion("union", "case", ["a";"_"])
+    let expected = TemplateNode.DiscriminatedUnion(TemplateValue.SimpleValue("union"), "case", ["a";"_"])
     HtmlNode.NewElement("a", [("fs-du","union");("fs-case","case(a,_)")])
     |> parseNodeSuccess 
     |> should equal expected

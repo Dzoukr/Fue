@@ -11,8 +11,10 @@ type Error =
     | ValueExpectedToBeSimple of source:obj
     // Parser
     | CannotParseForCycle of string
-    // Runner
+    // Node compiler
     | ValueExpectedToBeBoolean of value:obj
+    | ValueExpectedToBeIterable of value:obj
+    | ListOfDUExtractionIsLongerThanCaseValues of extractions:int * cases:int
 
 let explain = function
     // General
@@ -23,8 +25,10 @@ let explain = function
     | ValueExpectedToBeSimple(source) -> sprintf "Value \"%A\" is expected to be simple value, not method" source
     // Parser
     | CannotParseForCycle(value) -> sprintf "Cannot parse For-cycle logic from value \"%s\"" value
-    // Runner
+    // Node compiler
     | ValueExpectedToBeBoolean(value) -> sprintf "Value \"%A\" is expected to be boolean" value
+    | ValueExpectedToBeIterable(value) -> sprintf "Value \"%A\" is expected to be iterable" value
+    | ListOfDUExtractionIsLongerThanCaseValues(extr, vals) -> sprintf "Cannot extract and map %i values from discriminated union with %i values" extr vals
 
 type Result<'s> =
     | Success of 's

@@ -38,15 +38,15 @@ let parseTemplateValue text =
             | _ -> t |> SimpleValue
     parse text
 
-let parseForCycle forAttr =
+let parseForCycleAttribute forAttr =
     match "(.+) in (.+)" ==> forAttr with
     | TwoPartsMatch(item, source) -> ForCycle(item, source |> parseTemplateValue) |> Some
     | _ -> None
 
-let parseDiscriminatedUnion duAttr caseAttr =
+let parseUnionCaseAttribute caseAttr =
     match "(.+?)\((.*)\)" ==> caseAttr with
-    | TwoPartsMatch(caseName, parts) -> DiscriminatedUnion(duAttr, caseName, (parts |> toFunctionParams))
-    | _ -> DiscriminatedUnion(duAttr, caseAttr, [])
+    | TwoPartsMatch(caseName, parts) -> caseName, (parts |> toFunctionParams)
+    | _ -> caseAttr, []
 
 let parseInclude srcAttr dataAttr =
     let localData = 
@@ -71,9 +71,11 @@ let private (|Include|_|) (node:HtmlNode) =
 let parseNode (node:HtmlNode) = 
     let someSuccess = Some >> Success
     match node with
-    | ForCycle(attr) -> parseForCycle(attr) |> failForNone (CannotParseForCycle(attr)) >>= someSuccess
+    | ForCycle(attr) -> parseForCycleAttribute(attr) |> failForNone (CannotParseForCycle(attr)) >>= someSuccess
     | IfCondition(attr) -> attr |> parseTemplateValue |> IfCondition |> someSuccess
-    | DiscriminatedUnion(du, case) -> parseDiscriminatedUnion du case |> someSuccess
+    | DiscriminatedUnion(du, case) -> 
+        let c, extr = case |> parseUnionCaseAttribute 
+        DiscriminatedUnion((du |> parseTemplateValue), c, extr) |> someSuccess
     | Include(src, data) -> parseInclude src data |> someSuccess
     | _ -> None |> success
 

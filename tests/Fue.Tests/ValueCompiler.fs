@@ -181,3 +181,10 @@ let ``Compiles function with nested functions`` () =
     Function("add", [SimpleValue("x"); Function("mult", [SimpleValue("y"); SimpleValue("z")])])
     |> compileSuccess data
     |> should equal 13
+
+[<Test>]
+let ``Compiles function with generating list`` () = 
+    let data = init |> add "fn" (fun _ -> seq {for i in 1..3 do yield i})
+    Function("fn", [])
+    |> compileSuccess data
+    |> should equal [1;2;3]
