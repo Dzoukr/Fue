@@ -52,22 +52,12 @@ let parseUnionCaseAttribute caseAttr =
     | TwoPartsMatch(caseName, parts) -> caseName, (parts |> splitToFunctionParams)
     | _ -> caseAttr, []
 
-let parseIncludeDataAttribute dataAttr =
-        dataAttr 
-        |> split ';' 
-        |> List.map (splitToTuple '=') 
-        |> List.map (fun (k,v) -> k, parseTemplateValue(v))
-
 let private getAttributeValue attr (node:HtmlNode) = Option.bind (fun (v:HtmlAttribute) -> v.Value() |> Some) (node.TryGetAttribute(attr)) 
 let private (|ForCycle|_|) = getAttributeValue forAttr
 let private (|IfCondition|_|) = getAttributeValue ifAttr
 let private (|DiscriminatedUnion|_|) (node:HtmlNode) = 
     match node.TryGetAttribute(unionSourceAttr), node.TryGetAttribute(unionCaseAttr) with
     | Some(du), Some(case) -> (du.Value(), case.Value()) |> Some
-    | _ -> None
-let private (|Include|_|) (node:HtmlNode) = 
-    match node.Name(), node.TryGetAttribute("fs-src"), node.TryGetAttribute("fs-data") with
-    | "fs-include", Some(src), Some(data) -> (src.Value(), data.Value()) |> Some
     | _ -> None
 
 let parseNode (node:HtmlNode) = 
@@ -78,7 +68,6 @@ let parseNode (node:HtmlNode) =
     | DiscriminatedUnion(du, case) -> 
         let c, extr = case |> parseUnionCaseAttribute 
         DiscriminatedUnion((du |> parseTemplateValue), c, extr) |> someSuccess
-    | Include(src, data) -> Include(src, (data |> parseIncludeDataAttribute)) |> someSuccess
     | _ -> None |> success
 
 let parseTextInterpolations text = 

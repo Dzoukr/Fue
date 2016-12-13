@@ -115,18 +115,6 @@ let ``Parses discriminiated case with extract`` () =
     |> parseUnionCaseAttribute
     |> should equal ("Case", ["x";"_"])
 
-[<Test>]
-let ``Parses include`` () = 
-    let expected =  [
-                        ("x", TemplateValue.SimpleValue("y"))
-                        ("z", TemplateValue.Function("run", [TemplateValue.SimpleValue("a")]))
-                    ]
-    "x=y;z=run(a)" |> parseIncludeDataAttribute |> should equal expected
-
-[<Test>]
-let ``Parses include with no data`` () = 
-    "" |> parseIncludeDataAttribute |> should equal []
-
 let parseNodeSuccess = parseNode >> extract >> Option.get
 
 [<Test>]
@@ -147,13 +135,6 @@ let ``Parses if condition node`` () =
 let ``Parses discriminated union node`` () = 
     let expected = TemplateNode.DiscriminatedUnion(TemplateValue.SimpleValue("union"), "case", ["a";"_"])
     HtmlNode.NewElement("a", [("fs-du","union");("fs-case","case(a,_)")])
-    |> parseNodeSuccess 
-    |> should equal expected
-
-[<Test>]
-let ``Parses include node`` () = 
-    let expected = TemplateNode.Include("zdroj.html", [("lambda", TemplateValue.SimpleValue("zdrojLambdy"))])
-    HtmlNode.NewElement("fs-include", [("fs-src","zdroj.html");("fs-data","lambda=zdrojLambdy")])
     |> parseNodeSuccess 
     |> should equal expected
 
