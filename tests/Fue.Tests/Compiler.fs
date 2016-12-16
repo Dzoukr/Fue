@@ -15,3 +15,19 @@ let ``Compiles from string`` () =
     html 
     |> compileFromString data
     |> should equal """<div id="Roman">Dzoukr</div>"""
+
+[<Test>]
+let ``Compiles from unvalid html string`` () = 
+    let html = """No root here {{{who}}}<div id="{{{who}}}">{{{me}}}</div>"""
+    let data = init |> add "who" "Roman" |> add "me" "Dzoukr"
+    html 
+    |> compileFromString data
+    |> should equal """No root here Roman<div id="Roman">Dzoukr</div>"""
+
+[<Test>]
+let ``Compiles from plain string`` () = 
+    let html = """Hi {{{who}}}"""
+    let data = init |> add "who" "Dzoukr"
+    html 
+    |> compileFromString data
+    |> should equal """Hi Dzoukr"""
