@@ -7,6 +7,12 @@ open Fue.Data
 open Fue.Compiler
 open Fue.Rop
 open FSharp.Data
+open System.IO
+open System
+
+let private getFileContent file = 
+    Path.Combine([|AppDomain.CurrentDomain.BaseDirectory; file|])
+    |> File.ReadAllText
 
 [<Test>]
 let ``Compiles from string`` () = 
@@ -31,3 +37,9 @@ let ``Compiles from plain string`` () =
     html 
     |> compileFromString data
     |> should equal """Hi Dzoukr"""
+
+[<Test>]
+let ``Compiles from file`` () = 
+    let data = init |> add "message" "Dzoukr"
+    let result = compileFromFile data "SimplePage.html"
+    result |> should equal ("SimplePageCompiled.html" |> getFileContent)

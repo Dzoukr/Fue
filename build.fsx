@@ -10,7 +10,7 @@ open Fake.AssemblyInfoFile
 open System.Diagnostics
 open Fake.Testing
 
-let title = "Fue" // OK
+let title = "Fue" 
 
 let appBuildDir = "./build/app/"
 let appSrcDir = "./src/"
