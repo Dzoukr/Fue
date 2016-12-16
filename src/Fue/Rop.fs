@@ -69,16 +69,14 @@ let bind2 f x y =
     | Failure eR, Failure eL -> Failure <| eR @ eL
     | Failure e, _ | _, Failure e -> Failure e
 
-let bind3 f x y z =
-    match x, y, z with
-    | Success xR, Success yR, Success zR -> f xR yR zR
-    | Failure xF, Failure yF, Failure zF -> Failure <| xF @ yF @ zF
-    | Failure xF, Failure yF, _ -> Failure <| xF @ yF
-    | Failure xF, _, Failure zF -> Failure <| xF @ zF
-    | _, Failure yF, Failure zF -> Failure <| yF @ zF
-    | Failure xF, _, _ -> Failure xF
-    | _, Failure yF, _ -> Failure yF
-    | _, _, Failure zF -> Failure zF
+let fold results =
+    let foldFn acc item =
+        match acc, item with
+        | Success(res), Success(list) -> res @ list |> Success
+        | Success(_), Failure(errors) -> errors |> Failure
+        | Failure(errs), Failure(newErrs) -> errs @ newErrs |> Failure
+        | Failure(errs), Success(_) -> errs |> Failure
+    results |> List.fold foldFn (Success [])
 
 let (>>=) result f = bind f result
 let (>>=>) result f = bind (f >> Success) result

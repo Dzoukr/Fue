@@ -1,27 +1,24 @@
 ﻿module Fue.TemplateCompiler
 
 open Core
-open Data
-open StringUtils
 open Rop
 
-let private toStringValue = function
-    | Success(v:obj) -> v |> string
-    | Failure(errors) -> "CHYBA TODO"
 
 let private toTemplateValues (original, value) = original, (value |> Parser.parseTemplateValue)
 let private toCompiledValues data (original, templateValue) = original, (templateValue |> ValueCompiler.compile data)
-let private toStringValues (original, result) = original, (result |> toStringValue)
 
-let private convertToString data = 
+let private convertToCompiledValues data = 
     Parser.parseTextInterpolations
     >> List.map toTemplateValues
     >> List.map (toCompiledValues data)
-    >> List.map toStringValues
 
-let private replaceText (text:string) (replacements:(string * string) list) = 
-    let foldFn (acc:string) (item:string * string) = acc.Replace(fst item, snd item)
-    replacements |> List.fold foldFn text
+let private replaceText (text:string) (replacements:(string * Result<obj>) list) = 
+    let foldFn (acc:Result<string>) (item:string * Result<obj>) = 
+        match acc, item with
+        | Success(a), (key, Success(value)) -> a.Replace(key, string value) |> success
+        | Failure(f1), (_, Failure(f2)) -> f1 @ f2 |> Failure
+        | res, _ -> res
+    replacements |> List.fold foldFn (Success(text))
 
 /// Compiles templated string into final string
-let compile data text = convertToString data text |> replaceText text
+let compile data text = convertToCompiledValues data text |> replaceText text

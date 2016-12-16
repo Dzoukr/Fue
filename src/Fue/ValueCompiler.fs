@@ -3,7 +3,6 @@
 open Core
 open Data
 open StringUtils
-open Microsoft.FSharp.Reflection
 open System.Reflection
 open Rop
 open Reflection

@@ -2,7 +2,6 @@
 
 open Core
 open Data
-open StringUtils
 open Rop
 open FSharp.Data
 open Microsoft.FSharp.Reflection
@@ -24,22 +23,18 @@ let private checkExtractsLength (extracts:string list) (values:obj []) =
 let private bindIf f t b  = if b then t() else (f |> success)
 let private toTuples = List.map (fun (x:HtmlAttribute) -> x.Name(), x.Value())
 
-let private toList item = [item]
+let private asResults item = [item] |> success
 let private cleanIf (attr:HtmlAttribute) = attr.Name() <> Parser.ifAttr
 let private cleanFor (attr:HtmlAttribute) = attr.Name() <> Parser.forAttr
 let private cleanDu (attr:HtmlAttribute) = attr.Name() <> Parser.unionSourceAttr && attr.Name() <> Parser.unionCaseAttr
 let private cleanNone (attr:HtmlAttribute) = true
-let private compileAttributes data = List.map (fun (n,v) -> n, TemplateCompiler.compile data v)
-let private prepare data cleanFunc = List.filter cleanFunc >> toTuples >> compileAttributes data
 
-let private foldResults results =
-    let foldFn acc item =
-        match acc, item with
-        | Success(res), Success(list) -> res @ list |> Success
-        | Success(_), Failure(errors) -> errors |> Failure
-        | Failure(errs), Failure(newErrs) -> errs @ newErrs |> Failure
-        | Failure(errs), Success(_) -> errs |> Failure
-    results |> List.fold foldFn (Success [])
+let private compileAttributes data list = 
+    list 
+    |> List.map (fun (k,v) -> TemplateCompiler.compile data v >>=> (fun res -> [k, res])) 
+    |> Rop.fold
+
+let private prepareAttributes data cleanFunc = List.filter cleanFunc >> toTuples >> compileAttributes data
 
 let extractCase case (extracts:string list) union =
     let info, values = FSharpValue.GetUnionFields(union, union.GetType())
@@ -61,36 +56,36 @@ let compile data (source:HtmlNode) =
                 boolValue |> ValueCompiler.compile data
                 >>= checkIsBool
                 >>= bindIf [] (fun _ ->
-                    let attrs = source.Attributes() |> prepare data cleanIf
-                    source.Elements() |> List.map (comp data) |> foldResults
-                    >>=> (fun elms ->
-                        HtmlNode.NewElement(source.Name(), attrs, elms) |> toList
-                    )
+                    let attrs = source.Attributes() |> prepareAttributes data cleanIf
+                    let elms = source.Elements() |> List.map (comp data) |> Rop.fold
+                    Rop.bind2 (fun elms attrs ->
+                        HtmlNode.NewElement(source.Name(), attrs, elms) |> asResults
+                    ) elms attrs
                 )
-            | Some(ForCycle(item, cycle)) ->
+            | Some(ForCycle(itemName, cycle)) ->
                 cycle |> ValueCompiler.compile data
                 >>= checkIsIterable
                 >>= (fun list ->
-                    list |> Seq.map (fun l ->
-                        let attrs = source.Attributes() |> prepare data cleanFor
-                        let dataWithItem = data |> add item l
-                        source.Elements() |> List.map (comp dataWithItem) |> foldResults
-                        >>=> (fun elms ->
-                            HtmlNode.NewElement(source.Name(), attrs, elms) |> toList
-                        )
-                    ) |> Seq.toList |> foldResults
+                    list |> Seq.map (fun itemValue ->
+                        let dataWithItem = data |> add itemName itemValue
+                        let attrs = source.Attributes() |> prepareAttributes dataWithItem cleanFor
+                        let elms = source.Elements() |> List.map (comp dataWithItem) |> Rop.fold
+                        Rop.bind2 (fun elms attrs ->
+                            HtmlNode.NewElement(source.Name(), attrs, elms) |> asResults
+                        ) elms attrs
+                    ) |> Seq.toList |> Rop.fold
                 )
             | Some(DiscriminatedUnion(union,case,extracts)) ->
                 union |> ValueCompiler.compile data
                 >>= extractCase case extracts
                 >>= (fun (isMatch, dataToAdd) ->
                     if isMatch then
-                        let attrs = source.Attributes() |> prepare data cleanDu
+                        let attrs = source.Attributes() |> prepareAttributes data cleanDu
                         let newData = data |> addMany dataToAdd
-                        source.Elements() |> List.map (comp newData) |> foldResults
-                        >>=> (fun elms ->
-                            HtmlNode.NewElement(source.Name(), attrs, elms) |> toList
-                        )
+                        let elms = source.Elements() |> List.map (comp newData) |> Rop.fold
+                        Rop.bind2 (fun elms attrs ->
+                            HtmlNode.NewElement(source.Name(), attrs, elms) |> asResults
+                        ) elms attrs
                     else
                         [] |> success
                 )
@@ -99,13 +94,13 @@ let compile data (source:HtmlNode) =
                 | "" -> 
                     source.DirectInnerText() 
                     |> TemplateCompiler.compile data
-                    |> HtmlNode.NewText
-                    |> toList |> success
+                    >>=> HtmlNode.NewText 
+                    >>= asResults
                 | name ->
-                    source.Elements() |> List.map (comp data) |> foldResults
-                    >>=> (fun elms ->
-                        let attrs = source.Attributes() |> prepare data cleanNone
-                        HtmlNode.NewElement(name, attrs, elms) |> toList
-                    )
+                    let elms = source.Elements() |> List.map (comp data) |> Rop.fold
+                    let attrs = source.Attributes() |> prepareAttributes data cleanNone
+                    Rop.bind2 (fun elms attrs -> 
+                        HtmlNode.NewElement(name, attrs, elms) |> asResults
+                    ) elms attrs
         )
     comp data source
