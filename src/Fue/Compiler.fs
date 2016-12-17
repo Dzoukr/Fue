@@ -20,30 +20,8 @@ let private asDocument docType elms = HtmlDocument.New(docType, elms)
 let private documentToString doc = doc.ToString()
 
 let private parse addedSafeTags str = 
-    let html = """ 
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Test</title>
-</head>
-<body>
-    Hi
-</body>
-</html>
-    """
-    
-    let doc = html |> HtmlDocument.Parse
-    let typ = doc |> HtmlDocument.docType 
-    let newDoc = HtmlDocument.New(typ, doc.Elements())
-    let newDocString = newDoc.ToString()
-    
-    
-    
     let doc = str |> HtmlDocument.Parse
     let typ = doc |> HtmlDocument.docType 
-
-
-
     addedSafeTags, (doc.Elements()), typ
 
 let private safeParse str =
