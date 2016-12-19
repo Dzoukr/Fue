@@ -66,6 +66,12 @@ let ``Compiles false if`` () =
     |> should equal ""
 
 [<Test>]
+let ``Compiles if not`` () = 
+    init |> add "b" false |> add "value" "Roman"
+    |> fromText """<div fs-if-not="b">{{{value}}}</div>"""
+    |> should equal "<div>Roman</div>"
+
+[<Test>]
 let ``Compiles for from list`` () = 
     init |> add "y" ["a";"b";"c"]
     |> fromText """<div fs-for="x in y">{{{x}}}</div>"""
@@ -104,3 +110,9 @@ let ``Compiles attribute values`` () =
     init |> add "who" "Roman" |> add "me" "Dzoukr"
     |> fromText """<div id="{{{who}}}">{{{me}}}</div>"""
     |> should equal """<div id="Roman">Dzoukr</div>"""
+
+[<Test>]
+let ``Compiles additional info for forcycle`` () = 
+    init |> add "items" ["A";"B";"C"]
+    |> fromFile "ForCyclePage.html"
+    |> should equal ("ForCyclePageCompiled.html" |> getFileContent)

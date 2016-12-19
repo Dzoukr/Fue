@@ -132,6 +132,13 @@ let ``Parses if condition node`` () =
     |> should equal expected
 
 [<Test>]
+let ``Parses if not condition node`` () = 
+    let expected = TemplateNode.IfNotCondition(TemplateValue.SimpleValue("boolVal"))
+    HtmlNode.CreateNode """<a fs-if-not="boolVal" """
+    |> parseNodeSuccess 
+    |> should equal expected
+
+[<Test>]
 let ``Parses discriminated union node`` () = 
     let expected = TemplateNode.DiscriminatedUnion(TemplateValue.SimpleValue("union"), "case", ["a";"_"])
     HtmlNode.CreateNode """<a fs-du="union" fs-case="case(a,_)" """

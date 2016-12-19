@@ -58,6 +58,9 @@
   -->
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <None Include="ForCyclePageCompiled.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="paket.references" />
     <Content Include="App.config" />
     <Compile Include="Parser.fs" />
@@ -68,6 +71,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="SimplePageCompiled.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ForCyclePage.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -20,10 +20,9 @@ let private checkExtractsLength (extracts:string list) (values:obj []) =
     | x, y when x >= y -> (extracts, values) |> success 
     | x, y -> ListOfDUExtractionIsLongerThanCaseValues(x, y) |> fail
         
-let private bindIf f t b  = if b then t() else (f |> success)
-
 let private asResults item = [item] |> success
 let private cleanIf (attr:HtmlAttribute) = attr.Name <> Parser.ifAttr
+let private cleanIfNot (attr:HtmlAttribute) = attr.Name <> Parser.ifNotAttr
 let private cleanFor (attr:HtmlAttribute) = attr.Name <> Parser.forAttr
 let private cleanDu (attr:HtmlAttribute) = attr.Name <> Parser.unionSourceAttr && attr.Name <> Parser.unionCaseAttr
 let private cleanNone (attr:HtmlAttribute) = true
@@ -52,50 +51,73 @@ let private extractCase case (extracts:string list) union =
             (true,[ for i in [0..vals.Length - 1] do yield ex.[i], values.[i] ])
         )
 
+let private compileIf compileFun (source:HtmlNode) data boolFun cleanFun boolValue =
+    boolValue |> ValueCompiler.compile data
+    >>= checkIsBool
+    >>= (fun bValue ->
+        if boolFun(bValue) then
+            let attrs = source.Attributes |> prepareAttributes data cleanFun
+            let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
+            Rop.bind2 (newElements source.Name) elms attrs
+        else
+            [] |> success
+    )
+
+let private compileForCycle compileFun (source:HtmlNode) data itemName cycle =
+    cycle |> ValueCompiler.compile data
+    >>= checkIsIterable
+    >>= (fun list ->
+        let length = Seq.length list
+        list |> Seq.map (fun itemValue ->
+            let index = (list |> Seq.findIndex (fun x -> x = itemValue))
+            let dataWithItem = 
+                data 
+                |> add itemName itemValue 
+                |> add "$index" index
+                |> add "$iteration" (index + 1)
+                |> add "$length" length
+            let attrs = source.Attributes |> prepareAttributes dataWithItem cleanFor
+            let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun dataWithItem) |> Rop.fold
+            Rop.bind2 (newElements source.Name) elms attrs
+        ) |> Seq.toList |> Rop.fold
+    )
+
+let private compileUnion compileFun (source:HtmlNode) data union case extracts =
+    union |> ValueCompiler.compile data
+    >>= extractCase case extracts
+    >>= (fun (isMatch, dataToAdd) ->
+        if isMatch then
+            let attrs = source.Attributes |> prepareAttributes data cleanDu
+            let newData = data |> addMany (dataToAdd |> List.filter (fun x -> fst x <> "_"))
+            let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun newData) |> Rop.fold
+            Rop.bind2 (newElements source.Name) elms attrs
+        else
+            [] |> success
+    )
+
+let private compileOther compileFun (source:HtmlNode) data =
+    let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
+    let attrs = source.Attributes |> prepareAttributes data cleanNone
+    Rop.bind2 (newElements source.Name) elms attrs
+
 /// Applies attributes/interpolation logic onto Html node tree
 let compile data (source:HtmlNode) =
-    let rec comp data source  =
+    let rec comp data source =
+        
+        let compileIf = compileIf comp source data
+        let compileForCycle = compileForCycle comp source data
+        let compileUnion = compileUnion comp source data
+
         Parser.parseNode(source)
         >>= (fun node ->
             match node with
-            | Some(IfCondition(boolValue)) ->
-                boolValue |> ValueCompiler.compile data
-                >>= checkIsBool
-                >>= bindIf [] (fun _ ->
-                    let attrs = source.Attributes |> prepareAttributes data cleanIf
-                    let elms = source.ChildNodes |> Seq.toList |> List.map (comp data) |> Rop.fold
-                    Rop.bind2 (newElements source.Name) elms attrs
-                )
-            | Some(ForCycle(itemName, cycle)) ->
-                cycle |> ValueCompiler.compile data
-                >>= checkIsIterable
-                >>= (fun list ->
-                    list |> Seq.map (fun itemValue ->
-                        let dataWithItem = data |> add itemName itemValue
-                        let attrs = source.Attributes |> prepareAttributes dataWithItem cleanFor
-                        let elms = source.ChildNodes |> Seq.toList |> List.map (comp dataWithItem) |> Rop.fold
-                        Rop.bind2 (newElements source.Name) elms attrs
-                    ) |> Seq.toList |> Rop.fold
-                )
-            | Some(DiscriminatedUnion(union,case,extracts)) ->
-                union |> ValueCompiler.compile data
-                >>= extractCase case extracts
-                >>= (fun (isMatch, dataToAdd) ->
-                    if isMatch then
-                        let attrs = source.Attributes |> prepareAttributes data cleanDu
-                        let newData = data |> addMany dataToAdd
-                        let elms = source.ChildNodes |> Seq.toList |> List.map (comp newData) |> Rop.fold
-                        Rop.bind2 (newElements source.Name) elms attrs
-                    else
-                        [] |> success
-                )
+            | Some(IfCondition(boolValue)) -> boolValue |> compileIf (fun x -> x = true) cleanIf
+            | Some(IfNotCondition(boolValue)) -> boolValue |> compileIf (fun x -> x = false) cleanIfNot
+            | Some(ForCycle(itemName, cycle)) -> compileForCycle itemName cycle
+            | Some(DiscriminatedUnion(union,case,extracts)) -> compileUnion union case extracts
             | None ->
                 match source.Name with
                 | "#text" | "#comment" -> source.InnerHtml |> TemplateCompiler.compile data >>=> HtmlNode.CreateNode >>= asResults
-                | name ->
-                    let elms = source.ChildNodes |> Seq.toList |> List.map (comp data) |> Rop.fold
-                    let attrs = source.Attributes |> prepareAttributes data cleanNone
-                    Rop.bind2 (newElements name) elms attrs
-                    
+                | _ -> compileOther comp source data
         )
     comp data source

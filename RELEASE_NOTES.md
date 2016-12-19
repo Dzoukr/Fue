@@ -1,3 +1,7 @@
+#### 0.4.0 - December 19 2016
+* Added fs-if-not attribute
+* Added for cycle auto-created values
+ 
 #### 0.3.0 - December 19 2016
 * FSharp.Data removed in favor of HtmlAgilityPack
 

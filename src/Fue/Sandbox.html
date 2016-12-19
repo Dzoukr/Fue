@@ -5,11 +5,12 @@
 
 <!--For-cycle-->
 <li fs-for="item in items">
-    {{{item.Name}}}
+    {{{item.Name}}} {{{$index}}}
 </li>
 
 <!--Condition-->
 <div fs-if="someCondition" id="{{{id}}}">Value</div>
+<div fs-if-not="someCondition" id="{{{id}}}">Value</div>
 
 <!--Discriminated Union-->
 type UserAccess =
