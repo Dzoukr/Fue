@@ -43,7 +43,7 @@ let private extract = function
         |> sprintf "Compilation errors found: %s" 
 
 /// Compiles text
-let fromText data str =
+let fromText str data =
     let removeTags, value, docType = str |> safeParse
     value
     |> List.map (NodeCompiler.compile data)
@@ -54,6 +54,6 @@ let fromText data str =
     |> extract
 
 /// Compiles file content
-let fromFile data file =
+let fromFile file data =
     let content = file |> getFullPath |> File.ReadAllText
-    content |> fromText data
+    data |> fromText content
