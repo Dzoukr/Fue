@@ -19,7 +19,7 @@ let ``Compiles from string`` () =
     let html = """<div id="{{{who}}}">{{{me}}}</div>"""
     let data = init |> add "who" "Roman" |> add "me" "Dzoukr"
     html 
-    |> compileFromString data
+    |> fromText data
     |> should equal """<div id="Roman">Dzoukr</div>"""
 
 [<Test>]
@@ -27,7 +27,7 @@ let ``Compiles from unvalid html string`` () =
     let html = """No root here {{{who}}}<div id="{{{who}}}">{{{me}}}</div>"""
     let data = init |> add "who" "Roman" |> add "me" "Dzoukr"
     html 
-    |> compileFromString data
+    |> fromText data
     |> should equal """No root here Roman<div id="Roman">Dzoukr</div>"""
 
 [<Test>]
@@ -35,11 +35,20 @@ let ``Compiles from plain string`` () =
     let html = """Hi {{{who}}}"""
     let data = init |> add "who" "Dzoukr"
     html 
-    |> compileFromString data
+    |> fromText data
     |> should equal """Hi Dzoukr"""
 
 [<Test>]
+let ``Compiles with comments`` () = 
+    let html = """<!-- jQuery (necessary for Bootstrap's JavaScript {{{who}}}) -->"""
+    let data = init |> add "who" "Dzoukr"
+    html 
+    |> fromText data
+    |> should equal """<!-- jQuery (necessary for Bootstrap's JavaScript Dzoukr) -->"""
+
+
+[<Test>]
 let ``Compiles from file`` () = 
-    let data = init |> add "message" "Dzoukr"
-    let result = compileFromFile data "SimplePage.html"
+    let data = init |> add "message" "Dzoukr" |> add "isTrue" true
+    let result = fromFile data "SimplePage.html"
     result |> should equal ("SimplePageCompiled.html" |> getFileContent)

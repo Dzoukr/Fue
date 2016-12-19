@@ -29,7 +29,13 @@ let private safeParse str =
         str |> parse false
     with :? System.Exception -> str |> addSafeTags |> parse true
 
-let compileFromString data str =
+let private getFullPath file =
+    match Path.IsPathRooted file with
+    | true -> file
+    | false -> Path.Combine([|AppDomain.CurrentDomain.BaseDirectory; file|])
+
+/// Compiles text
+let fromText data str =
     let removeTags, value, docType = str |> safeParse
     value
     |> List.map (NodeCompiler.compile data)
@@ -39,11 +45,7 @@ let compileFromString data str =
     >>=> (fun value -> if removeTags then value |> removeSafeTags else value)
     |> Rop.extract
 
-let private getFullPath file =
-    match Path.IsPathRooted file with
-    | true -> file
-    | false -> Path.Combine([|AppDomain.CurrentDomain.BaseDirectory; file|])
-
-let compileFromFile data file =
+/// Compiles file content
+let fromFile data file =
     let content = file |> getFullPath |> File.ReadAllText
-    content |> compileFromString data
+    content |> fromText data

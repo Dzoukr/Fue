@@ -11,3 +11,4 @@ let splitToFirstAndList (separator:char) (s:string) =
     match parts.Length with
     | 1 -> s, []
     | _ -> parts.[0], [ for i in 1..parts.Length - 1 do yield parts.[i] ]
+let (|EmptyString|_|) (str:string) = if str |> String.IsNullOrEmpty then Some(str) else None
