@@ -11,13 +11,16 @@ open System.Diagnostics
 open Fake.Testing
 
 let title = "Fue" 
+let description = "F# templating library"
 
 let appBuildDir = "./build/app/"
 let appSrcDir = "./src/"
 let testsBuildDir = "./build/tests/"
 let testsSrcDir = "./tests"
 
-let description = ""
+let nugetBinDir = "./nuget/bin/"
+let nugetOutputDir = "./nuget/output/"
+
 
 // Read release notes & version info from RELEASE_NOTES.md
 let release = File.ReadLines "RELEASE_NOTES.md" |> ReleaseNotesHelper.parseReleaseNotes
@@ -45,7 +48,7 @@ Target "AssemblyInfo" <| fun () ->
         let version = release.AssemblyVersion
         let dirName = FileInfo(file).Directory.Name
         CreateFSharpAssemblyInfo file
-           [ Attribute.Title dirName
+           [ Attribute.Title title
              Attribute.Product title
              Attribute.Description description
              Attribute.Version version
@@ -77,11 +80,40 @@ Target "RunTests" (fun _ ->
         NUnit3 (fun p -> { p with ResultSpecs = [dir + "\TestResult.xml"]}) [file]
 )
 
+Target "Nuget" <| fun () ->
+    CreateDir nugetOutputDir
+    CreateDir nugetBinDir
+    let nugetFiles = [
+        "Fue.xml"
+        "Fue.dll"
+    ]
+    nugetFiles |> List.map (fun f -> appBuildDir + "Fue/" + f) |> CopyFiles nugetBinDir
+    
+    // Format the release notes
+    let releaseNotes = release.Notes |> String.concat "\n"
+    NuGet (fun p -> 
+        { p with   
+            Project = title
+            Description = description
+            Version = release.NugetVersion
+            ReleaseNotes = releaseNotes
+            OutputPath = nugetOutputDir
+            References = nugetFiles |> List.filter (fun x -> x.EndsWith(".dll"))
+            Files = nugetFiles |> List.map (fun f -> ("bin/" + f, Some("lib/net45"), None))
+            Dependencies =
+            [
+                "FSharp.Data", GetPackageVersion ("./packages") "FSharp.Data"
+            ]
+        })
+        "nuget/Fue.nuspec"
+
+
 
 // Dependencies
 "CleanTests" ==> "BuildTests"
 "BuildTests"  ==> "RunTests"
 "CleanApp" ==> "AssemblyInfo" ==> "BuildApp"
+"RunTests" ==> "BuildApp" ==> "Nuget"
 
 // start build
 RunTargetOrDefault "?"

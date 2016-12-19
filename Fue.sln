@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{CD63D170-C5B6-4C7D-AA73-5A44C76F22F3}"
 	ProjectSection(SolutionItems) = preProject
 		build.fsx = build.fsx
+		nuget\Fue.nuspec = nuget\Fue.nuspec
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md
 	EndProjectSection

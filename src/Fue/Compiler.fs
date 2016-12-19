@@ -34,6 +34,14 @@ let private getFullPath file =
     | true -> file
     | false -> Path.Combine([|AppDomain.CurrentDomain.BaseDirectory; file|])
 
+let private extract = function
+    | Success(res) -> res
+    | Failure(errors) -> 
+        errors 
+        |> List.map (Rop.explain) 
+        |> List.fold (fun a i -> a + ", " + i) ""
+        |> sprintf "Compilation errors found: %s" 
+
 /// Compiles text
 let fromText data str =
     let removeTags, value, docType = str |> safeParse
@@ -43,7 +51,7 @@ let fromText data str =
     >>=> asDocument docType
     >>=> documentToString
     >>=> (fun value -> if removeTags then value |> removeSafeTags else value)
-    |> Rop.extract
+    |> extract
 
 /// Compiles file content
 let fromFile data file =

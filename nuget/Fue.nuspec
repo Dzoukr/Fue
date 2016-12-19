@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <id>Fue</id>
+    <title>Fue</title>
+    <version>@build.number@</version>
+    <authors>Roman Provaznik</authors>
+    <owners>Roman Provaznik</owners>
+    <licenseUrl>http://github.com/dzoukr/Fue/blob/master/LICENSE</licenseUrl>
+    <projectUrl>http://github.com/dzoukr/Fue</projectUrl>
+    <iconUrl>https://avatars2.githubusercontent.com/u/851307?v=3&amp;s=64</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <summary></summary>
+    <description>@description@</description>
+    <releaseNotes>@releaseNotes@</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>FSharp,F#,Templates,Templating</tags>
+    @dependencies@
+    @references@
+  </metadata>
+  @files@
+</package>
