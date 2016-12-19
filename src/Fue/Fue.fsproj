@@ -61,6 +61,7 @@
     <None Include="paket.references" />
     <None Include="Sandbox.html" />
     <Compile Include="Rop.fs" />
+    <Compile Include="Extensions.fs" />
     <Compile Include="StringUtils.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Core.fs" />
@@ -83,12 +84,9 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.5.2'">
       <ItemGroup>
-        <Reference Include="FSharp.Data">
-          <HintPath>..\..\packages\FSharp.Data\lib\net40\FSharp.Data.dll</HintPath>
+        <Reference Include="HtmlAgilityPack">
+          <HintPath>..\..\packages\HtmlAgilityPack\lib\Net45\HtmlAgilityPack.dll</HintPath>
           <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-        <Reference Include="System.Xml.Linq">
           <Paket>True</Paket>
         </Reference>
       </ItemGroup>

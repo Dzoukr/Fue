@@ -1,11 +1,10 @@
-﻿module Fue.NodeCompiler
+﻿module internal Fue.NodeCompiler
 
 open Core
 open Data
 open Rop
-open FSharp.Data
+open HtmlAgilityPack
 open Microsoft.FSharp.Reflection
-open StringUtils
 
 let private checkIsBool (value:obj) = 
     if(value :? bool) then value :?> bool |> success 
@@ -22,24 +21,28 @@ let private checkExtractsLength (extracts:string list) (values:obj []) =
     | x, y -> ListOfDUExtractionIsLongerThanCaseValues(x, y) |> fail
         
 let private bindIf f t b  = if b then t() else (f |> success)
-let private toTuples = List.map (fun (x:HtmlAttribute) -> x.Name(), x.Value())
 
 let private asResults item = [item] |> success
-let private cleanIf (attr:HtmlAttribute) = attr.Name() <> Parser.ifAttr
-let private cleanFor (attr:HtmlAttribute) = attr.Name() <> Parser.forAttr
-let private cleanDu (attr:HtmlAttribute) = attr.Name() <> Parser.unionSourceAttr && attr.Name() <> Parser.unionCaseAttr
+let private cleanIf (attr:HtmlAttribute) = attr.Name <> Parser.ifAttr
+let private cleanFor (attr:HtmlAttribute) = attr.Name <> Parser.forAttr
+let private cleanDu (attr:HtmlAttribute) = attr.Name <> Parser.unionSourceAttr && attr.Name <> Parser.unionCaseAttr
 let private cleanNone (attr:HtmlAttribute) = true
 
-let private compileAttributes data list = 
-    list 
-    |> List.map (fun (k,v) -> TemplateCompiler.compile data v >>=> (fun res -> [k, res])) 
+let private compileAttributes data attrs = 
+    attrs 
+    |> Seq.map (fun (a:HtmlAttribute) -> TemplateCompiler.compile data a.Value >>=> (fun res -> [a.OriginalName, res]))
+    |> Seq.toList 
     |> Rop.fold
 
-let private prepareAttributes data cleanFunc = List.filter cleanFunc >> toTuples >> compileAttributes data
+let private prepareAttributes data cleanFunc = Seq.filter cleanFunc >> compileAttributes data
 
-let private newElements name elms attrs = HtmlNode.NewElement(name, attrs, elms) |> asResults
+let private newElements name children attributes = 
+    let node = HtmlDocument().CreateElement(name)
+    attributes |> Seq.iter (fun (name, value) -> node.SetAttributeValue(name, value) |> ignore)
+    children |> List.iter (fun x -> if x <> null then node.AppendChild(x) |> ignore else ())
+    node |> asResults
 
-let extractCase case (extracts:string list) union =
+let private extractCase case (extracts:string list) union =
     let info, values = FSharpValue.GetUnionFields(union, union.GetType())
     if info.Name <> case then 
         (false, []) |> success
@@ -59,9 +62,9 @@ let compile data (source:HtmlNode) =
                 boolValue |> ValueCompiler.compile data
                 >>= checkIsBool
                 >>= bindIf [] (fun _ ->
-                    let attrs = source.Attributes() |> prepareAttributes data cleanIf
-                    let elms = source.Elements() |> List.map (comp data) |> Rop.fold
-                    Rop.bind2 (newElements (source.Name())) elms attrs
+                    let attrs = source.Attributes |> prepareAttributes data cleanIf
+                    let elms = source.ChildNodes |> Seq.toList |> List.map (comp data) |> Rop.fold
+                    Rop.bind2 (newElements source.Name) elms attrs
                 )
             | Some(ForCycle(itemName, cycle)) ->
                 cycle |> ValueCompiler.compile data
@@ -69,9 +72,9 @@ let compile data (source:HtmlNode) =
                 >>= (fun list ->
                     list |> Seq.map (fun itemValue ->
                         let dataWithItem = data |> add itemName itemValue
-                        let attrs = source.Attributes() |> prepareAttributes dataWithItem cleanFor
-                        let elms = source.Elements() |> List.map (comp dataWithItem) |> Rop.fold
-                        Rop.bind2 (newElements (source.Name())) elms attrs
+                        let attrs = source.Attributes |> prepareAttributes dataWithItem cleanFor
+                        let elms = source.ChildNodes |> Seq.toList |> List.map (comp dataWithItem) |> Rop.fold
+                        Rop.bind2 (newElements source.Name) elms attrs
                     ) |> Seq.toList |> Rop.fold
                 )
             | Some(DiscriminatedUnion(union,case,extracts)) ->
@@ -79,22 +82,19 @@ let compile data (source:HtmlNode) =
                 >>= extractCase case extracts
                 >>= (fun (isMatch, dataToAdd) ->
                     if isMatch then
-                        let attrs = source.Attributes() |> prepareAttributes data cleanDu
+                        let attrs = source.Attributes |> prepareAttributes data cleanDu
                         let newData = data |> addMany dataToAdd
-                        let elms = source.Elements() |> List.map (comp newData) |> Rop.fold
-                        Rop.bind2 (newElements (source.Name())) elms attrs
+                        let elms = source.ChildNodes |> Seq.toList |> List.map (comp newData) |> Rop.fold
+                        Rop.bind2 (newElements source.Name) elms attrs
                     else
                         [] |> success
                 )
             | None ->
-                match source.Name() with
-                | EmptyString(_) -> 
-                    match source.DirectInnerText() with
-                    | EmptyString(_) -> source |> string |> TemplateCompiler.compile data >>=> HtmlNode.Parse
-                    | text -> text |> TemplateCompiler.compile data >>=> HtmlNode.NewText >>= asResults
+                match source.Name with
+                | "#text" | "#comment" -> source.InnerHtml |> TemplateCompiler.compile data >>=> HtmlNode.CreateNode >>= asResults
                 | name ->
-                    let elms = source.Elements() |> List.map (comp data) |> Rop.fold
-                    let attrs = source.Attributes() |> prepareAttributes data cleanNone
+                    let elms = source.ChildNodes |> Seq.toList |> List.map (comp data) |> Rop.fold
+                    let attrs = source.Attributes |> prepareAttributes data cleanNone
                     Rop.bind2 (newElements name) elms attrs
                     
         )

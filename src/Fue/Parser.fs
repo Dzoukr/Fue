@@ -4,8 +4,9 @@ open System
 open Core
 open StringUtils
 open System.Text.RegularExpressions
-open FSharp.Data
+open HtmlAgilityPack
 open Rop
+open Extensions
 
 let forAttr = "fs-for"
 let ifAttr = "fs-if"
@@ -52,12 +53,12 @@ let parseUnionCaseAttribute caseAttr =
     | TwoPartsMatch(caseName, parts) -> caseName, (parts |> splitToFunctionParams)
     | _ -> caseAttr, []
 
-let private getAttributeValue attr (node:HtmlNode) = Option.bind (fun (v:HtmlAttribute) -> v.Value() |> Some) (node.TryGetAttribute(attr)) 
+let private getAttributeValue attr (node:HtmlNode) = Option.bind (fun (v:HtmlAttribute) -> v.Value |> Some) (node.TryGetAttribute(attr)) 
 let private (|ForCycle|_|) = getAttributeValue forAttr
 let private (|IfCondition|_|) = getAttributeValue ifAttr
 let private (|DiscriminatedUnion|_|) (node:HtmlNode) = 
     match node.TryGetAttribute(unionSourceAttr), node.TryGetAttribute(unionCaseAttr) with
-    | Some(du), Some(case) -> (du.Value(), case.Value()) |> Some
+    | Some(du), Some(case) -> (du.Value, case.Value) |> Some
     | _ -> None
 
 let parseNode (node:HtmlNode) = 

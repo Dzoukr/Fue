@@ -102,7 +102,7 @@ Target "Nuget" <| fun () ->
             Files = nugetFiles |> List.map (fun f -> ("bin/" + f, Some("lib/net45"), None))
             Dependencies =
             [
-                "FSharp.Data", GetPackageVersion ("./packages") "FSharp.Data"
+                "HtmlAgilityPack", GetPackageVersion ("./packages") "HtmlAgilityPack"
             ]
         })
         "nuget/Fue.nuspec"

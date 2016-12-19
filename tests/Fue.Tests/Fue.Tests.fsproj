@@ -58,17 +58,16 @@
   -->
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <None Include="SimplePageCompiled.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="paket.references" />
     <Content Include="App.config" />
     <Compile Include="Parser.fs" />
     <Compile Include="ValueCompiler.fs" />
     <Compile Include="TemplateCompiler.fs" />
-    <Compile Include="NodeCompiler.fs" />
     <Compile Include="Compiler.fs" />
     <None Include="SimplePage.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="SimplePageCompiled.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -89,12 +88,14 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.5.2'">
       <ItemGroup>
-        <Reference Include="FSharp.Data">
-          <HintPath>..\..\packages\FSharp.Data\lib\net40\FSharp.Data.dll</HintPath>
+        <Reference Include="FsUnit.NUnit">
+          <HintPath>..\..\packages\FsUnit\lib\net45\FsUnit.NUnit.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
-        <Reference Include="System.Xml.Linq">
+        <Reference Include="NHamcrest">
+          <HintPath>..\..\packages\FsUnit\lib\net45\NHamcrest.dll</HintPath>
+          <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
       </ItemGroup>
@@ -103,13 +104,8 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.5.2'">
       <ItemGroup>
-        <Reference Include="FsUnit.NUnit">
-          <HintPath>..\..\packages\FsUnit\lib\net45\FsUnit.NUnit.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-        <Reference Include="NHamcrest">
-          <HintPath>..\..\packages\FsUnit\lib\net45\NHamcrest.dll</HintPath>
+        <Reference Include="HtmlAgilityPack">
+          <HintPath>..\..\packages\HtmlAgilityPack\lib\Net45\HtmlAgilityPack.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

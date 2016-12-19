@@ -4,8 +4,8 @@ open NUnit.Framework
 open FsUnit
 open Fue.Core
 open Fue.Parser
-open FSharp.Data
 open Fue.Rop
+open HtmlAgilityPack
 
 [<Test>]
 let ``Parses simple value`` () = 
@@ -120,21 +120,21 @@ let parseNodeSuccess = parseNode >> extract >> Option.get
 [<Test>]
 let ``Parses for cycle node`` () = 
     let expected = TemplateNode.ForCycle("i", TemplateValue.SimpleValue("list"))
-    HtmlNode.NewElement("a", [("fs-for","i in list")])
+    HtmlNode.CreateNode """<a fs-for="i in list" """
     |> parseNodeSuccess 
     |> should equal expected
 
 [<Test>]
 let ``Parses if condition node`` () = 
     let expected = TemplateNode.IfCondition(TemplateValue.SimpleValue("boolVal"))
-    HtmlNode.NewElement("a", [("fs-if","boolVal")])
+    HtmlNode.CreateNode """<a fs-if="boolVal" """
     |> parseNodeSuccess 
     |> should equal expected
 
 [<Test>]
 let ``Parses discriminated union node`` () = 
     let expected = TemplateNode.DiscriminatedUnion(TemplateValue.SimpleValue("union"), "case", ["a";"_"])
-    HtmlNode.NewElement("a", [("fs-du","union");("fs-case","case(a,_)")])
+    HtmlNode.CreateNode """<a fs-du="union" fs-case="case(a,_)" """
     |> parseNodeSuccess 
     |> should equal expected
 

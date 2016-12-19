@@ -2,7 +2,7 @@ framework: auto-detect
 source http://nuget.org/api/v2
 
 nuget FAKE
-nuget FSharp.Data
+nuget HtmlAgilityPack
 nuget NUnit
 nuget NUnit.ConsoleRunner
 nuget Nuget.CommandLine
