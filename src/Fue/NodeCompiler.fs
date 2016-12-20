@@ -5,6 +5,7 @@ open Data
 open Rop
 open HtmlAgilityPack
 open Microsoft.FSharp.Reflection
+open Extensions
 
 let private checkIsBool (value:obj) = 
     if(value :? bool) then value :?> bool |> success 
@@ -117,7 +118,7 @@ let compile data (source:HtmlNode) =
             | Some(DiscriminatedUnion(union,case,extracts)) -> compileUnion union case extracts
             | None ->
                 match source.Name with
-                | "#text" | "#comment" -> source.InnerHtml |> TemplateCompiler.compile data >>=> HtmlNode.CreateNode >>= asResults
+                | "#text" | "#comment" -> source.InnerHtml |> TemplateCompiler.compile data >>=> HtmlDocument.ParseNode >>= asResults
                 | _ -> compileOther comp source data
         )
     comp data source

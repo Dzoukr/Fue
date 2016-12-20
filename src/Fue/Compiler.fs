@@ -4,6 +4,7 @@ open Rop
 open System.IO
 open System
 open HtmlAgilityPack
+open Extensions
 
 let private asDocument elms = 
     let doc = HtmlDocument()
@@ -25,10 +26,7 @@ let private extract = function
         |> List.fold (fun a i -> a + ", " + i) ""
         |> sprintf "Compilation errors found: %s" 
 
-let private getChildNodes str =
-    let doc = HtmlDocument()
-    doc.LoadHtml(str)
-    doc.DocumentNode.ChildNodes
+let private getChildNodes str = (str |> HtmlDocument.ParseNode).ChildNodes
 
 /// Compiles text
 let fromText str data =

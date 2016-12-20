@@ -116,3 +116,11 @@ let ``Compiles additional info for forcycle`` () =
     init |> add "items" ["A";"B";"C"]
     |> fromFile "ForCyclePage.html"
     |> should equal ("ForCyclePageCompiled.html" |> getFileContent)
+
+[<Test>]
+let ``Compiles with complex html`` () = 
+    init 
+    |> add "menu" """<!-- MENU --><div class="menu"><a href="javascript:;">Test</a></div>"""
+    |> fromFile "MasterPage.html"
+    |> should equal ("MasterPageCompiled.html" |> getFileContent)
+

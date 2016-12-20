@@ -1,3 +1,6 @@
+#### 0.4.1 - December 20 2016
+* Bugfix for complex html
+ 
 #### 0.4.0 - December 19 2016
 * Added fs-if-not attribute
 * Added for cycle auto-created values
