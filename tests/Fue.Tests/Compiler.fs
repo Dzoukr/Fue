@@ -124,18 +124,43 @@ let ``Compiles with complex html`` () =
     |> fromFile "MasterPage.html"
     |> should equal ("MasterPageCompiled.html" |> getFileContent)
 
+type MyModel = {
+    Name : string
+    Surname : string option
+}
+
 [<Test>]
-let ``Compiles with Some and None directly`` () = 
+let ``Compiles with Some directly`` () = 
     init 
-    |> add "value" (Some "string")
-    |> fromText """<div fs-if="value.IsSome">Ano</div>"""
+    |> add "value" { Name = "AAA"; Surname = Some("bbb")}
+    |> fromText """<div fs-if="value.Surname.IsSome">Ano</div>"""
     |> should equal "<div>Ano</div>"
 
 [<Test>]
-let ``Compiles with Some and None as external`` () = 
+let ``Compiles with None directly`` () = 
+    init 
+    |> add "value" { Name = "AAA"; Surname = None}
+    |> fromText """<div fs-if="value.Surname.IsSome">Ano</div>"""
+    |> should equal ""
+
+[<Test>]
+let ``Compiles with Some as external`` () = 
     init 
     |> add "value" (Some "string")
     |> add "isSome" Option.isSome<string>
     |> fromText """<div fs-if="value |> isSome">Ano</div>"""
     |> should equal "<div>Ano</div>"
 
+type MyModels = {
+    Models : MyModel list
+}
+
+[<Test>]
+let ``Compiles nested loops`` () = 
+    let models = [0..3] |> List.map (fun x -> {Name = "A" + x.ToString(); Surname = Some("AA" + x.ToString())})
+    
+    init 
+    |> add "value" (Some "string")
+    |> add "isSome" Option.isSome<string>
+    |> fromText """<div fs-if="value |> isSome">Ano</div>"""
+    |> should equal "<div>Ano</div>"

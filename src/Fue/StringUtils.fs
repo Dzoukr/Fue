@@ -1,4 +1,4 @@
-﻿module Fue.StringUtils
+﻿module internal Fue.StringUtils
 
 open System
 

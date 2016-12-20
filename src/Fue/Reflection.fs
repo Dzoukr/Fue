@@ -1,4 +1,4 @@
-﻿module Fue.Reflection
+﻿module internal Fue.Reflection
 
 open Microsoft.FSharp.Reflection
 open System.Reflection

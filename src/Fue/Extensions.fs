@@ -1,4 +1,4 @@
-﻿module Fue.Extensions
+﻿module internal Fue.Extensions
 
 open HtmlAgilityPack
 

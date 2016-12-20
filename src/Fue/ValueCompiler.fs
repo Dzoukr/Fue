@@ -11,6 +11,32 @@ type private Return =
     | Value of obj
     | Method of obj * MethodInfo
 
+let private getObjectValue key value =
+    match key, value with
+    | "IsSome", null -> Return.Value(false) |> Some
+    | "IsNone", null -> Return.Value(true) |> Some
+    | k, v -> 
+        match getValue k v with
+        | Some(va) -> Return.Value(va) |> Some
+        | _ -> None
+
+let private getObjectMethod key value = Option.bind (fun mi -> Return.Method(value, mi) |> Some) (getMethod key value)
+    
+let private deepSearch data name props =
+    let foldFn (acc:Result<Return>) (item:string) =
+        match acc with
+        | Success(Value(a)) ->
+            let found = 
+                [getObjectValue; getObjectMethod] 
+                |> List.fold (fun ac fn -> match ac with | Some(acum) -> Some(acum) | None -> fn item a) None
+            
+            match found with
+            | Some(value) -> value |> success
+            | None -> NoMethodOrPropertyFound(a, item) |> fail
+        | _ -> acc
+    let structure = data |> get name |> Return.Value |> success
+    props |> List.fold foldFn structure
+
 let private search data key =
     match data |> tryGet key with
     | Some(value) -> value |> Return.Value |> success // direct match
@@ -18,17 +44,7 @@ let private search data key =
         let name,props = key |> splitToFirstAndList '.'
         match props |> List.length with
         | 0 -> CannotExtractProperty(key) |> fail
-        | _ -> 
-            let foldFn (acc:Result<Return>) (item:string) =
-                match acc with
-                | Success(Value(a)) ->
-                    match a |> getValue item, a |> getMethod item with
-                    | Some(value),_ -> value |> Return.Value |> success
-                    | _,Some(mi) -> Return.Method(a, mi) |> success
-                    | _ -> NoMethodOrPropertyFound(a, item) |> fail
-                | _ -> acc
-            let structure = data |> get name |> Return.Value |> success
-            props |> List.fold foldFn structure
+        | _ -> deepSearch data name props
 
 let private boxed obj =
     match obj |> isTuple with

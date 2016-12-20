@@ -1,3 +1,6 @@
+#### 0.4.3 - December 20 2016
+* Bugfix for properties on Option None values
+
 #### 0.4.2 - December 20 2016
 * Bugfix for Option values
 
