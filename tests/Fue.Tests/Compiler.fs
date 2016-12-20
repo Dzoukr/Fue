@@ -124,3 +124,18 @@ let ``Compiles with complex html`` () =
     |> fromFile "MasterPage.html"
     |> should equal ("MasterPageCompiled.html" |> getFileContent)
 
+[<Test>]
+let ``Compiles with Some and None directly`` () = 
+    init 
+    |> add "value" (Some "string")
+    |> fromText """<div fs-if="value.IsSome">Ano</div>"""
+    |> should equal "<div>Ano</div>"
+
+[<Test>]
+let ``Compiles with Some and None as external`` () = 
+    init 
+    |> add "value" (Some "string")
+    |> add "isSome" Option.isSome<string>
+    |> fromText """<div fs-if="value |> isSome">Ano</div>"""
+    |> should equal "<div>Ano</div>"
+

@@ -1,11 +1,18 @@
 ﻿module Fue.Reflection
 
 open Microsoft.FSharp.Reflection
+open System.Reflection
+
+let private getSafeValue value (info:PropertyInfo) =
+    let pars = info.GetIndexParameters()
+    match pars.Length with
+    | 1 -> info.GetValue(value, [|value|])
+    | _ -> info.GetValue(value)
 
 let getValue key value =
     value.GetType().GetProperties()
     |> Array.filter (fun x -> x.Name = key) 
-    |> Array.map (fun x -> x.GetValue(value)) 
+    |> Array.map (getSafeValue value)
     |> Array.tryHead
 
 let getMethod key value =

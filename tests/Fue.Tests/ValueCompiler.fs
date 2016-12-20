@@ -188,3 +188,17 @@ let ``Compiles function with generating list`` () =
     Function("fn", [])
     |> compileSuccess data
     |> should equal [1;2;3]
+
+[<Test>]
+let ``Compiles Some and None`` () = 
+    let data = init |> add "someValue" (Some "my value")
+    SimpleValue("someValue.IsSome")
+    |> compileSuccess data
+    |> should equal true
+
+[<Test>]
+let ``Compiles generic function`` () = 
+    let data = init |> add "someFunc" (fun x -> x) |> add "x" 10
+    Function("someFunc", [SimpleValue("x")])
+    |> compileSuccess data
+    |> should equal 10

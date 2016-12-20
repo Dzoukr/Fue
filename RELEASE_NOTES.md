@@ -1,3 +1,6 @@
+#### 0.4.2 - December 20 2016
+* Bugfix for Option values
+
 #### 0.4.1 - December 20 2016
 * Bugfix for complex html
  

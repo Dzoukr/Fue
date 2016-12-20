@@ -23,7 +23,7 @@ let private extract = function
     | Failure(errors) -> 
         errors 
         |> List.map (Rop.explain) 
-        |> List.fold (fun a i -> a + ", " + i) ""
+        |> List.fold (fun a i -> a + i + ",") ""
         |> sprintf "Compilation errors found: %s" 
 
 let private getChildNodes str = (str |> HtmlDocument.ParseNode).ChildNodes
