@@ -16,10 +16,11 @@ let private checkIsIterable (value:obj) =
         seq { for v in value :?> System.Collections.IEnumerable do yield v } |> success 
     else ValueExpectedToBeIterable(value) |> fail
 
-let private checkExtractsLength (extracts:string list) (values:obj []) =
+let private prepareExtracts case (extracts:string list) (values:obj []) =
     match extracts.Length, values.Length with
-    | x, y when x >= y -> (extracts, values) |> success 
-    | x, y -> ListOfDUExtractionIsLongerThanCaseValues(x, y) |> fail
+    | 0, _ -> (extracts, values) |> success
+    | x, y when x = y -> (extracts, values) |> success 
+    | x, y -> ListOfDUExtractionHasDifferentLength(case, x, y) |> fail
         
 let private asResults item = [item] |> success
 let private cleanIf (attr:HtmlAttribute) = attr.Name <> Parser.ifAttr
@@ -47,9 +48,9 @@ let private extractCase case (extracts:string list) union =
     if info.Name <> case then 
         (false, []) |> success
     else 
-        checkExtractsLength extracts values
+        prepareExtracts case extracts values
         >>=> (fun (ex,vals) ->
-            (true,[ for i in [0..vals.Length - 1] do yield ex.[i], values.[i] ])
+            (true,[ for i in [0..ex.Length - 1] do yield ex.[i], values.[i] ])
         )
 
 let private compileIf compileFun (source:HtmlNode) data boolFun cleanFun boolValue =

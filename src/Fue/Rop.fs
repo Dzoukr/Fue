@@ -14,7 +14,7 @@ type Error =
     // Node compiler
     | ValueExpectedToBeBoolean of value:obj
     | ValueExpectedToBeIterable of value:obj
-    | ListOfDUExtractionIsLongerThanCaseValues of extractions:int * cases:int
+    | ListOfDUExtractionHasDifferentLength of case:string * extractions:int * cases:int
 
 let explain = function
     // General
@@ -28,7 +28,7 @@ let explain = function
     // Node compiler
     | ValueExpectedToBeBoolean(value) -> sprintf "Value \"%A\" is expected to be boolean" value
     | ValueExpectedToBeIterable(value) -> sprintf "Value \"%A\" is expected to be iterable" value
-    | ListOfDUExtractionIsLongerThanCaseValues(extr, vals) -> sprintf "Cannot extract and map %i values from discriminated union with %i values" extr vals
+    | ListOfDUExtractionHasDifferentLength(case, extr, vals) -> sprintf "Case %s has %i values associated, but you want to extract %i values" case extr vals
 
 type Result<'s> =
     | Success of 's

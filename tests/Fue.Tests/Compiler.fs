@@ -151,16 +151,13 @@ let ``Compiles with Some as external`` () =
     |> fromText """<div fs-if="value |> isSome">Ano</div>"""
     |> should equal "<div>Ano</div>"
 
-type MyModels = {
-    Models : MyModel list
-}
+type MyCase =
+    | A of string * string
+    | B
 
 [<Test>]
-let ``Compiles nested loops`` () = 
-    let models = [0..3] |> List.map (fun x -> {Name = "A" + x.ToString(); Surname = Some("AA" + x.ToString())})
-    
+let ``Ignores extraction when specified for union`` () = 
     init 
-    |> add "value" (Some "string")
-    |> add "isSome" Option.isSome<string>
-    |> fromText """<div fs-if="value |> isSome">Ano</div>"""
+    |> add "someCase" (MyCase.A("Ahoj","Zdar"))
+    |> fromText """<div fs-du="someCase" fs-case="A">Ano</div>"""
     |> should equal "<div>Ano</div>"

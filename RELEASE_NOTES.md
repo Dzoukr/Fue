@@ -1,3 +1,6 @@
+#### 0.4.4 - December 20 2016
+* Discriminated Union can ignore extractions
+
 #### 0.4.3 - December 20 2016
 * Bugfix for properties on Option None values
 
