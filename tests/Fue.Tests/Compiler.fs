@@ -66,10 +66,19 @@ let ``Compiles false if`` () =
     |> should equal ""
 
 [<Test>]
-let ``Compiles else`` () = 
+let ``Compiles else with new line`` () = 
     init |> add "b" false |> add "value" "Roman"
-    |> fromText """<div fs-if="b">A</div>   <div fs-else>{{{value}}}</div>"""
-    |> should equal "   <div>Roman</div>"
+    |> fromText """<div fs-if="b">A</div>
+    <div fs-else>{{{value}}}</div>"""
+    |> should equal """
+    <div>Roman</div>"""
+
+[<Test>]
+let ``Compiles else`` () = 
+    init |> add "b" false
+    |> fromText """<i fs-if="b" class="fa fa-sign-in text-success"></i><i fs-else class="fa fa-sign-out text-danger"></i>"""
+    |> should equal """<i class="fa fa-sign-out text-danger"></i>"""
+
 
 [<Test>]
 let ``Compiles for from list`` () = 

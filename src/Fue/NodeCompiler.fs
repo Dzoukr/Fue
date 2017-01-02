@@ -118,7 +118,7 @@ let rec private findNonEmptyPreviousSibling (source:HtmlNode) =
     let sibling = source.PreviousSibling
     match sibling with
     | null -> None
-    | sibling -> if sibling.InnerText |> StringUtils.isWhiteSpace then findNonEmptyPreviousSibling sibling else Some sibling
+    | sibling -> if sibling.OuterHtml |> StringUtils.isWhiteSpace then findNonEmptyPreviousSibling sibling else Some sibling
 
 /// Applies attributes/interpolation logic onto Html node tree
 let compile data (source:HtmlNode) =

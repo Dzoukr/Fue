@@ -1,3 +1,6 @@
+#### 0.5.2 - January 02 2017
+* Different bugfix for fs-else
+
 #### 0.5.1 - January 02 2017
 * Bugfix for fs-else
 
