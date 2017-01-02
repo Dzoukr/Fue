@@ -114,6 +114,12 @@ let private compileOther compileFun (source:HtmlNode) data =
     let attrs = source.Attributes |> prepareAttributes data cleanNone
     Rop.bind2 (newElements source.Name) elms attrs
 
+let rec private findNonEmptyPreviousSibling (source:HtmlNode) =
+    let sibling = source.PreviousSibling
+    match sibling with
+    | null -> None
+    | sibling -> if sibling.InnerText |> StringUtils.isWhiteSpace then findNonEmptyPreviousSibling sibling else Some sibling
+
 /// Applies attributes/interpolation logic onto Html node tree
 let compile data (source:HtmlNode) =
     let rec comp data source =
@@ -128,7 +134,9 @@ let compile data (source:HtmlNode) =
             match node with
             | Some(IfCondition(boolValue)) -> boolValue |> compileIf
             | Some(ElseCondition) -> 
-                source.PreviousSibling |> Parser.parseNode
+                source |> findNonEmptyPreviousSibling 
+                >=>> failForNone (ElseConditionMustImmediatelyFollowIfCondition)
+                >>= Parser.parseNode
                 >>= (fun n ->
                     match n with
                     | Some(IfCondition(boolValue)) -> boolValue |> compileElse

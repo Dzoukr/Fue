@@ -68,8 +68,8 @@ let ``Compiles false if`` () =
 [<Test>]
 let ``Compiles else`` () = 
     init |> add "b" false |> add "value" "Roman"
-    |> fromText """<div fs-if="b">A</div><div fs-else>{{{value}}}</div>"""
-    |> should equal "<div>Roman</div>"
+    |> fromText """<div fs-if="b">A</div>   <div fs-else>{{{value}}}</div>"""
+    |> should equal "   <div>Roman</div>"
 
 [<Test>]
 let ``Compiles for from list`` () = 

@@ -1,3 +1,6 @@
+#### 0.5.1 - January 02 2017
+* Bugfix for fs-else
+
 #### 0.5.0 - January 02 2017
 * Attribute fs-if-not removed in favor of fs-else
 
