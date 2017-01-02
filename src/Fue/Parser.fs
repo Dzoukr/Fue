@@ -10,7 +10,7 @@ open Extensions
 
 let forAttr = "fs-for"
 let ifAttr = "fs-if"
-let ifNotAttr = "fs-if-not"
+let elseAttr = "fs-else"
 let unionSourceAttr = "fs-du"
 let unionCaseAttr = "fs-case"
 
@@ -57,7 +57,7 @@ let parseUnionCaseAttribute caseAttr =
 let private getAttributeValue attr (node:HtmlNode) = Option.bind (fun (v:HtmlAttribute) -> v.Value |> Some) (node.TryGetAttribute(attr)) 
 let private (|ForCycle|_|) = getAttributeValue forAttr
 let private (|IfCondition|_|) = getAttributeValue ifAttr
-let private (|IfNotCondition|_|) = getAttributeValue ifNotAttr
+let private (|ElseCondition|_|) = getAttributeValue elseAttr
 let private (|DiscriminatedUnion|_|) (node:HtmlNode) = 
     match node.TryGetAttribute(unionSourceAttr), node.TryGetAttribute(unionCaseAttr) with
     | Some(du), Some(case) -> (du.Value, case.Value) |> Some
@@ -68,7 +68,7 @@ let parseNode (node:HtmlNode) =
     match node with
     | ForCycle(attr) -> parseForCycleAttribute(attr) |> failForNone (CannotParseForCycle(attr)) >>= someSuccess
     | IfCondition(attr) -> attr |> parseTemplateValue |> IfCondition |> someSuccess
-    | IfNotCondition(attr) -> attr |> parseTemplateValue |> IfNotCondition |> someSuccess
+    | ElseCondition(_) -> ElseCondition |> someSuccess
     | DiscriminatedUnion(du, case) -> 
         let c, extr = case |> parseUnionCaseAttribute 
         DiscriminatedUnion((du |> parseTemplateValue), c, extr) |> someSuccess

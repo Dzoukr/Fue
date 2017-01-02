@@ -7,5 +7,5 @@ type TemplateValue =
 type TemplateNode =
     | ForCycle of item:string * source:TemplateValue
     | IfCondition of source:TemplateValue
-    | IfNotCondition of source:TemplateValue
+    | ElseCondition
     | DiscriminatedUnion of union:TemplateValue * case:string * extract:string list

@@ -1,12 +1,12 @@
 FRAMEWORK: NET452
 NUGET
   remote: http://www.nuget.org/api/v2
-    FAKE (4.45.3)
+    FAKE (4.47.2)
     FSharp.Core (4.0.0.1)
     FsUnit (2.3.2)
       FSharp.Core (>= 3.1.2.5)
       NUnit (3.5)
     HtmlAgilityPack (1.4.9.5)
-    NuGet.CommandLine (3.4.3)
+    NuGet.CommandLine (3.5)
     NUnit (3.5)
     NUnit.ConsoleRunner (3.5)

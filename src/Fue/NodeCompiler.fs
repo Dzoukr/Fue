@@ -24,7 +24,7 @@ let private prepareExtracts case (extracts:string list) (values:obj []) =
         
 let private asResults item = [item] |> success
 let private cleanIf (attr:HtmlAttribute) = attr.Name <> Parser.ifAttr
-let private cleanIfNot (attr:HtmlAttribute) = attr.Name <> Parser.ifNotAttr
+let private cleanElse (attr:HtmlAttribute) = attr.Name <> Parser.elseAttr
 let private cleanFor (attr:HtmlAttribute) = attr.Name <> Parser.forAttr
 let private cleanDu (attr:HtmlAttribute) = attr.Name <> Parser.unionSourceAttr && attr.Name <> Parser.unionCaseAttr
 let private cleanNone (attr:HtmlAttribute) = true
@@ -49,16 +49,28 @@ let private extractCase case (extracts:string list) union =
         (false, []) |> success
     else 
         prepareExtracts case extracts values
-        >>=> (fun (ex,vals) ->
+        >>=> (fun (ex,_) ->
             (true,[ for i in [0..ex.Length - 1] do yield ex.[i], values.[i] ])
         )
 
-let private compileIf compileFun (source:HtmlNode) data boolFun cleanFun boolValue =
+let private compileIf compileFun (source:HtmlNode) data boolValue =
     boolValue |> ValueCompiler.compile data
     >>= checkIsBool
     >>= (fun bValue ->
-        if boolFun(bValue) then
-            let attrs = source.Attributes |> prepareAttributes data cleanFun
+        if bValue then
+            let attrs = source.Attributes |> prepareAttributes data cleanIf
+            let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
+            Rop.bind2 (newElements source.Name) elms attrs
+        else
+            [] |> success
+    )
+
+let private compileElse compileFun (source:HtmlNode) data boolValue =
+    boolValue |> ValueCompiler.compile data
+    >>= checkIsBool
+    >>= (fun bValue ->
+        if bValue = false then
+            let attrs = source.Attributes |> prepareAttributes data cleanElse
             let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
             Rop.bind2 (newElements source.Name) elms attrs
         else
@@ -107,14 +119,21 @@ let compile data (source:HtmlNode) =
     let rec comp data source =
         
         let compileIf = compileIf comp source data
+        let compileElse = compileElse comp source data
         let compileForCycle = compileForCycle comp source data
         let compileUnion = compileUnion comp source data
 
         Parser.parseNode(source)
         >>= (fun node ->
             match node with
-            | Some(IfCondition(boolValue)) -> boolValue |> compileIf (fun x -> x = true) cleanIf
-            | Some(IfNotCondition(boolValue)) -> boolValue |> compileIf (fun x -> x = false) cleanIfNot
+            | Some(IfCondition(boolValue)) -> boolValue |> compileIf
+            | Some(ElseCondition) -> 
+                source.PreviousSibling |> Parser.parseNode
+                >>= (fun n ->
+                    match n with
+                    | Some(IfCondition(boolValue)) -> boolValue |> compileElse
+                    | _ -> ElseConditionMustImmediatelyFollowIfCondition |> fail
+                )
             | Some(ForCycle(itemName, cycle)) -> compileForCycle itemName cycle
             | Some(DiscriminatedUnion(union,case,extracts)) -> compileUnion union case extracts
             | None ->

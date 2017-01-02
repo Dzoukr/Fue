@@ -14,6 +14,7 @@ type Error =
     // Node compiler
     | ValueExpectedToBeBoolean of value:obj
     | ValueExpectedToBeIterable of value:obj
+    | ElseConditionMustImmediatelyFollowIfCondition
     | ListOfDUExtractionHasDifferentLength of case:string * extractions:int * cases:int
 
 let explain = function
@@ -28,6 +29,7 @@ let explain = function
     // Node compiler
     | ValueExpectedToBeBoolean(value) -> sprintf "Value \"%A\" is expected to be boolean" value
     | ValueExpectedToBeIterable(value) -> sprintf "Value \"%A\" is expected to be iterable" value
+    | ElseConditionMustImmediatelyFollowIfCondition -> "Else condition must immediately follow If condition"
     | ListOfDUExtractionHasDifferentLength(case, extr, vals) -> sprintf "Case %s has %i values associated, but you want to extract %i values" case extr vals
 
 type Result<'s> =

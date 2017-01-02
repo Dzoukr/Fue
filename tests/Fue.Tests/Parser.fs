@@ -132,9 +132,9 @@ let ``Parses if condition node`` () =
     |> should equal expected
 
 [<Test>]
-let ``Parses if not condition node`` () = 
-    let expected = TemplateNode.IfNotCondition(TemplateValue.SimpleValue("boolVal"))
-    HtmlNode.CreateNode """<a fs-if-not="boolVal" """
+let ``Parses else condition node`` () = 
+    let expected = TemplateNode.ElseCondition
+    HtmlNode.CreateNode """<a fs-else href="abc" """
     |> parseNodeSuccess 
     |> should equal expected
 

@@ -1,3 +1,6 @@
+#### 0.5.0 - January 02 2017
+* Attribute fs-if-not removed in favor of fs-else
+
 #### 0.4.4 - December 20 2016
 * Discriminated Union can ignore extractions
 
