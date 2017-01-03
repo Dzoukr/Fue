@@ -170,3 +170,17 @@ let ``Ignores extraction when specified for union`` () =
     |> add "someCase" (MyCase.A("Ahoj","Zdar"))
     |> fromText """<div fs-du="someCase" fs-case="A">Ano</div>"""
     |> should equal "<div>Ano</div>"
+
+[<Test>]
+let ``Works with constant value`` () = 
+    init 
+    |> add "myFunc" (fun value -> value + " added")
+    |> fromText """{{{"something" |> myFunc}}}"""
+    |> should equal "something added"
+
+[<Test>]
+let ``Works if condition with constant value`` () =
+    init 
+    |> add "equals" (fun x y -> x = y) |> add "item" "menu"
+    |> fromText """<div fs-if="equals(item, 'menu')">Yes</div>"""
+    |> should equal "<div>Yes</div>"

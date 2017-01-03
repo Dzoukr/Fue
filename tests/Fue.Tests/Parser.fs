@@ -14,10 +14,34 @@ let ``Parses simple value`` () =
     |> should equal (TemplateValue.SimpleValue("value"))
 
 [<Test>]
+let ``Parses constant value`` () = 
+    """ "value" """
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Constant("value"))
+
+[<Test>]
+let ``Parses constant value (single quote)`` () = 
+    "'value'"
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Constant("value"))
+
+[<Test>]
 let ``Parses function value`` () = 
     "value()" 
     |> parseTemplateValue 
     |> should equal (TemplateValue.Function("value", []))
+
+[<Test>]
+let ``Parses function with constant value`` () = 
+    "value(\"hello\")" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Constant("hello")]))
+
+[<Test>]
+let ``Parses function with constant value and simple value`` () = 
+    "equals(my, \"hello\")" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("equals", [TemplateValue.SimpleValue("my"); TemplateValue.Constant("hello")]))
 
 [<Test>]
 let ``Parses method`` () = 

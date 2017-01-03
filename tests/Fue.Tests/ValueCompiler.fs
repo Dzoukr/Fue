@@ -202,3 +202,10 @@ let ``Compiles generic function`` () =
     Function("someFunc", [SimpleValue("x")])
     |> compileSuccess data
     |> should equal 10
+
+[<Test>]
+let ``Compiles function with constant value`` () = 
+    let data = init |> add "print" (fun x -> "printed " + x)
+    Function("print", [Constant("hello")])
+    |> compileSuccess data
+    |> should equal "printed hello"

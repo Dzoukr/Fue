@@ -80,5 +80,6 @@ let compile data value =
                         invoke.Invoke(func, funcParams)
                     | Method(ob, mi) -> mi.Invoke(ob, methodParams)
                 )
+            | Constant(value) -> value |> success
         comp value
     )

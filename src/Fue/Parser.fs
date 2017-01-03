@@ -30,6 +30,11 @@ let private (|TwoPartsMatch|_|) (groups:GroupCollection) =
         (fnName, parts) |> Some
     | _ -> None
 
+let private (|OnePartMatch|_|) (groups:GroupCollection) =
+    match groups.Count with
+    | 2 -> groups.[1].Value |> clean |> Some
+    | _ -> None
+
 let parseTemplateValue text =
     let rec parse t =
         match "(.+)\|\>(.+)" ==> t with
@@ -41,7 +46,11 @@ let parseTemplateValue text =
             | TwoPartsMatch(fnName, parts) ->
                 let parts = parts |> splitToFunctionParams |> List.map parse
                 Function(fnName, parts)
-            | _ -> t |> SimpleValue
+            | _ -> 
+                match "\"(.+)\"" ==> t, "'(.+)'" ==> t with
+                | OnePartMatch(constant), _ 
+                | _, OnePartMatch(constant) -> Constant(constant)
+                | _ -> t |> SimpleValue
     parse text
 
 let parseForCycleAttribute forAttr =

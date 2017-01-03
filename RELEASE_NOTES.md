@@ -1,3 +1,6 @@
+#### 0.6.0 - January 03 2017
+* Added constant value type
+
 #### 0.5.2 - January 02 2017
 * Different bugfix for fs-else
 
