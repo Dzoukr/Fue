@@ -1,3 +1,6 @@
+### 0.7.0 - January 04 2017
+* Added fs-template tag
+
 #### 0.6.0 - January 03 2017
 * Added constant value type
 

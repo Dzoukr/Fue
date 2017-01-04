@@ -61,8 +61,6 @@
     <None Include="paket.references" />
     <Content Include="App.config" />
     <Compile Include="Parser.fs" />
-    <Compile Include="ValueCompiler.fs" />
-    <Compile Include="TemplateCompiler.fs" />
     <Compile Include="Compiler.fs" />
     <None Include="SimplePage.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

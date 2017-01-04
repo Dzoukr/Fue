@@ -1,4 +1,4 @@
-﻿module Fue.TemplateCompiler
+﻿module internal Fue.TemplateCompiler
 
 open Core
 open Rop

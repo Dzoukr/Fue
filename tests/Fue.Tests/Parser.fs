@@ -4,7 +4,6 @@ open NUnit.Framework
 open FsUnit
 open Fue.Core
 open Fue.Parser
-open Fue.Rop
 open HtmlAgilityPack
 
 [<Test>]
@@ -102,6 +101,18 @@ let ``Parses function value with inner function`` () =
             ]))
 
 [<Test>]
+[<Ignore("Issue investigated")>]
+let ``Parses function value with inner function (different format)`` () = 
+    "add(x,mult(y,z))" 
+    |> parseTemplateValue 
+    |> should equal (
+        TemplateValue.Function("add", 
+            [
+                TemplateValue.SimpleValue("x"); 
+                TemplateValue.Function("mult", [TemplateValue.SimpleValue("y");TemplateValue.SimpleValue("z")]);
+            ]))
+
+[<Test>]
 let ``Parses simple value with white spaces`` () = 
     "value (a, b)" 
     |> parseTemplateValue 
@@ -139,34 +150,34 @@ let ``Parses discriminiated case with extract`` () =
     |> parseUnionCaseAttribute
     |> should equal ("Case", ["x";"_"])
 
-let parseNodeSuccess = parseNode >> extract >> Option.get
+let parseNode = parseNode >> Option.get
 
 [<Test>]
 let ``Parses for cycle node`` () = 
     let expected = TemplateNode.ForCycle("i", TemplateValue.SimpleValue("list"))
     HtmlNode.CreateNode """<a fs-for="i in list" """
-    |> parseNodeSuccess 
+    |> parseNode 
     |> should equal expected
 
 [<Test>]
 let ``Parses if condition node`` () = 
     let expected = TemplateNode.IfCondition(TemplateValue.SimpleValue("boolVal"))
     HtmlNode.CreateNode """<a fs-if="boolVal" """
-    |> parseNodeSuccess 
+    |> parseNode 
     |> should equal expected
 
 [<Test>]
 let ``Parses else condition node`` () = 
     let expected = TemplateNode.ElseCondition
     HtmlNode.CreateNode """<a fs-else href="abc" """
-    |> parseNodeSuccess 
+    |> parseNode 
     |> should equal expected
 
 [<Test>]
 let ``Parses discriminated union node`` () = 
     let expected = TemplateNode.DiscriminatedUnion(TemplateValue.SimpleValue("union"), "case", ["a";"_"])
     HtmlNode.CreateNode """<a fs-du="union" fs-case="case(a,_)" """
-    |> parseNodeSuccess 
+    |> parseNode 
     |> should equal expected
 
 [<Test>]

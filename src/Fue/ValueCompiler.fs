@@ -1,4 +1,4 @@
-﻿module Fue.ValueCompiler
+﻿module internal Fue.ValueCompiler
 
 open Core
 open Data

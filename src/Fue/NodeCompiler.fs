@@ -23,11 +23,11 @@ let private prepareExtracts case (extracts:string list) (values:obj []) =
     | x, y -> ListOfDUExtractionHasDifferentLength(case, x, y) |> fail
         
 let private asResults item = [item] |> success
-let private cleanIf (attr:HtmlAttribute) = attr.Name <> Parser.ifAttr
-let private cleanElse (attr:HtmlAttribute) = attr.Name <> Parser.elseAttr
-let private cleanFor (attr:HtmlAttribute) = attr.Name <> Parser.forAttr
-let private cleanDu (attr:HtmlAttribute) = attr.Name <> Parser.unionSourceAttr && attr.Name <> Parser.unionCaseAttr
-let private cleanNone (attr:HtmlAttribute) = true
+let private filterIf (attr:HtmlAttribute) = attr.Name <> Parser.ifAttr
+let private filterElse (attr:HtmlAttribute) = attr.Name <> Parser.elseAttr
+let private filterFor (attr:HtmlAttribute) = attr.Name <> Parser.forAttr
+let private filterDu (attr:HtmlAttribute) = attr.Name <> Parser.unionSourceAttr && attr.Name <> Parser.unionCaseAttr
+let private filterNone (attr:HtmlAttribute) = true
 
 let private compileAttributes data attrs = 
     attrs 
@@ -53,30 +53,24 @@ let private extractCase case (extracts:string list) union =
             (true,[ for i in [0..ex.Length - 1] do yield ex.[i], values.[i] ])
         )
 
+let private compileNode compileFun (source:HtmlNode) data attributesFilter =
+    let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
+    match source.Name with
+    | "fs-template" -> elms
+    | name ->
+        let attrs = source.Attributes |> prepareAttributes data attributesFilter
+        Rop.bind2 (newElements name) elms attrs
+
 let private compileIf compileFun (source:HtmlNode) data boolValue =
     boolValue |> ValueCompiler.compile data
     >>= checkIsBool
-    >>= (fun bValue ->
-        if bValue then
-            let attrs = source.Attributes |> prepareAttributes data cleanIf
-            let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
-            Rop.bind2 (newElements source.Name) elms attrs
-        else
-            [] |> success
-    )
+    >>= (fun bValue -> if bValue then compileNode compileFun source data filterIf else [] |> success)
 
 let private compileElse compileFun (source:HtmlNode) data boolValue =
     boolValue |> ValueCompiler.compile data
     >>= checkIsBool
-    >>= (fun bValue ->
-        if bValue = false then
-            let attrs = source.Attributes |> prepareAttributes data cleanElse
-            let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
-            Rop.bind2 (newElements source.Name) elms attrs
-        else
-            [] |> success
-    )
-
+    >>= (fun bValue -> if bValue = false then compileNode compileFun source data filterElse else [] |> success)
+    
 let private compileForCycle compileFun (source:HtmlNode) data itemName cycle =
     cycle |> ValueCompiler.compile data
     >>= checkIsIterable
@@ -90,9 +84,7 @@ let private compileForCycle compileFun (source:HtmlNode) data itemName cycle =
                 |> add "$index" index
                 |> add "$iteration" (index + 1)
                 |> add "$length" length
-            let attrs = source.Attributes |> prepareAttributes dataWithItem cleanFor
-            let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun dataWithItem) |> Rop.fold
-            Rop.bind2 (newElements source.Name) elms attrs
+            compileNode compileFun source dataWithItem filterFor
         ) |> Seq.toList |> Rop.fold
     )
 
@@ -101,18 +93,11 @@ let private compileUnion compileFun (source:HtmlNode) data union case extracts =
     >>= extractCase case extracts
     >>= (fun (isMatch, dataToAdd) ->
         if isMatch then
-            let attrs = source.Attributes |> prepareAttributes data cleanDu
             let newData = data |> addMany (dataToAdd |> List.filter (fun x -> fst x <> "_"))
-            let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun newData) |> Rop.fold
-            Rop.bind2 (newElements source.Name) elms attrs
+            compileNode compileFun source newData filterDu
         else
             [] |> success
     )
-
-let private compileOther compileFun (source:HtmlNode) data =
-    let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
-    let attrs = source.Attributes |> prepareAttributes data cleanNone
-    Rop.bind2 (newElements source.Name) elms attrs
 
 let rec private findNonEmptyPreviousSibling (source:HtmlNode) =
     let sibling = source.PreviousSibling
@@ -130,13 +115,13 @@ let compile data (source:HtmlNode) =
         let compileUnion = compileUnion comp source data
 
         Parser.parseNode(source)
-        >>= (fun node ->
+        >=>> (fun node ->
             match node with
             | Some(IfCondition(boolValue)) -> boolValue |> compileIf
             | Some(ElseCondition) -> 
                 source |> findNonEmptyPreviousSibling 
                 >=>> failForNone (ElseConditionMustImmediatelyFollowIfCondition)
-                >>= Parser.parseNode
+                >>=> Parser.parseNode
                 >>= (fun n ->
                     match n with
                     | Some(IfCondition(boolValue)) -> boolValue |> compileElse
@@ -147,6 +132,6 @@ let compile data (source:HtmlNode) =
             | None ->
                 match source.Name with
                 | "#text" | "#comment" -> source.InnerHtml |> TemplateCompiler.compile data >>=> HtmlDocument.ParseNode >>= asResults
-                | _ -> compileOther comp source data
+                | _ -> compileNode comp source data filterNone
         )
     comp data source

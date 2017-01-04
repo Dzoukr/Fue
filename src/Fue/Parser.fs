@@ -1,11 +1,9 @@
 ﻿module Fue.Parser
 
-open System
 open Core
 open StringUtils
 open System.Text.RegularExpressions
 open HtmlAgilityPack
-open Rop
 open Extensions
 
 let forAttr = "fs-for"
@@ -73,15 +71,14 @@ let private (|DiscriminatedUnion|_|) (node:HtmlNode) =
     | _ -> None
 
 let parseNode (node:HtmlNode) = 
-    let someSuccess = Some >> Success
     match node with
-    | ForCycle(attr) -> parseForCycleAttribute(attr) |> failForNone (CannotParseForCycle(attr)) >>= someSuccess
-    | IfCondition(attr) -> attr |> parseTemplateValue |> IfCondition |> someSuccess
-    | ElseCondition(_) -> ElseCondition |> someSuccess
+    | ForCycle(attr) -> parseForCycleAttribute(attr)
+    | IfCondition(attr) -> attr |> parseTemplateValue |> IfCondition |> Some
+    | ElseCondition(_) -> ElseCondition |> Some
     | DiscriminatedUnion(du, case) -> 
         let c, extr = case |> parseUnionCaseAttribute 
-        DiscriminatedUnion((du |> parseTemplateValue), c, extr) |> someSuccess
-    | _ -> None |> success
+        DiscriminatedUnion((du |> parseTemplateValue), c, extr) |> Some
+    | _ -> None
 
 let parseTextInterpolations text = 
     let regex = new Regex("{{{(.*?)}}}", RegexOptions.IgnoreCase)

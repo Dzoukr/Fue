@@ -1,4 +1,4 @@
-﻿module Fue.Rop
+﻿module internal Fue.Rop
 
 open System
 
@@ -9,8 +9,6 @@ type Error =
     | CannotExtractProperty of key:string
     | NoMethodOrPropertyFound of source:obj * name:string
     | ValueExpectedToBeSimple of source:obj
-    // Parser
-    | CannotParseForCycle of string
     // Node compiler
     | ValueExpectedToBeBoolean of value:obj
     | ValueExpectedToBeIterable of value:obj
@@ -24,8 +22,6 @@ let explain = function
     | CannotExtractProperty(key) -> sprintf "Cannot extract property after \".\" symbol from \"%s\"" key
     | NoMethodOrPropertyFound(source, name) -> sprintf "No property or method named \"%s\" found for \"%A\"" name source
     | ValueExpectedToBeSimple(source) -> sprintf "Value \"%A\" is expected to be simple value, not method" source
-    // Parser
-    | CannotParseForCycle(value) -> sprintf "Cannot parse For-cycle logic from value \"%s\"" value
     // Node compiler
     | ValueExpectedToBeBoolean(value) -> sprintf "Value \"%A\" is expected to be boolean" value
     | ValueExpectedToBeIterable(value) -> sprintf "Value \"%A\" is expected to be iterable" value
