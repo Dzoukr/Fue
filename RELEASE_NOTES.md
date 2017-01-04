@@ -1,3 +1,7 @@
+### 0.8.0 - January 04 2017
+* Constant renamed to Literal in core
+* Better parsing
+
 ### 0.7.0 - January 04 2017
 * Added fs-template tag
 

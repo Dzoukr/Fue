@@ -177,14 +177,14 @@ let ``Ignores extraction when specified for union`` () =
     |> should equal "<div>Ano</div>"
 
 [<Test>]
-let ``Works with constant value`` () = 
+let ``Works with literal value`` () = 
     init 
     |> add "myFunc" (fun value -> value + " added")
     |> fromText """{{{"something" |> myFunc}}}"""
     |> should equal "something added"
 
 [<Test>]
-let ``Works if condition with constant value`` () =
+let ``Works if condition with literal value`` () =
     init 
     |> add "equals" (fun x y -> x = y) |> add "item" "menu"
     |> fromText """<div fs-if="equals(item, 'menu')">Yes</div>"""
@@ -350,7 +350,6 @@ let ``Compiles function with more params`` () =
     |> should equal "100"
 
 [<Test>]
-[<Ignore("Issue investigated")>]
 let ``Compiles function with nested functions`` () = 
     let addFun = fun x y -> x + y
     let multFun x y = x * y 
@@ -371,7 +370,7 @@ let ``Compiles generic function`` () =
     |> should equal "10"
 
 [<Test>]
-let ``Compiles function with constant value`` () = 
+let ``Compiles function with literal value`` () = 
     init |> add "print" (fun x -> "printed " + x)
     |> fromText "{{{print('hello')}}}"
     |> should equal "printed hello"

@@ -3,7 +3,7 @@
 type TemplateValue =
     | SimpleValue of name:string
     | Function of name:string * parameters:TemplateValue list
-    | Constant of value:obj
+    | Literal of value:obj
 
 type TemplateNode =
     | ForCycle of item:string * source:TemplateValue

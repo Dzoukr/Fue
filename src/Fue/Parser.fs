@@ -40,14 +40,17 @@ let parseTemplateValue text =
             let f,p = fnName |> splitByCurrying
             Function(f, p @ [parts |> parse])
         | _ -> 
-            match "(.+?)\((.*)\)" ==> t with
-            | TwoPartsMatch(fnName, parts) ->
+            match "(.+?)\((.*)\)" ==> t, "(.+?)\s+(.*)" ==> (t |> clean) with
+            | TwoPartsMatch(fnName, parts), _ ->
                 let parts = parts |> splitToFunctionParams |> List.map parse
+                Function(fnName, parts)
+            | _, TwoPartsMatch(fnName, parts) ->
+                let parts = parts |> split ' ' |> List.map parse
                 Function(fnName, parts)
             | _ -> 
                 match "\"(.+)\"" ==> t, "'(.+)'" ==> t with
                 | OnePartMatch(constant), _ 
-                | _, OnePartMatch(constant) -> Constant(constant)
+                | _, OnePartMatch(constant) -> Literal(constant)
                 | _ -> t |> SimpleValue
     parse text
 

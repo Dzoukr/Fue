@@ -13,16 +13,16 @@ let ``Parses simple value`` () =
     |> should equal (TemplateValue.SimpleValue("value"))
 
 [<Test>]
-let ``Parses constant value`` () = 
+let ``Parses literal value`` () = 
     """ "value" """
     |> parseTemplateValue 
-    |> should equal (TemplateValue.Constant("value"))
+    |> should equal (TemplateValue.Literal("value"))
 
 [<Test>]
-let ``Parses constant value (single quote)`` () = 
+let ``Parses literal value (single quote)`` () = 
     "'value'"
     |> parseTemplateValue 
-    |> should equal (TemplateValue.Constant("value"))
+    |> should equal (TemplateValue.Literal("value"))
 
 [<Test>]
 let ``Parses function value`` () = 
@@ -31,16 +31,28 @@ let ``Parses function value`` () =
     |> should equal (TemplateValue.Function("value", []))
 
 [<Test>]
-let ``Parses function with constant value`` () = 
-    "value(\"hello\")" 
+let ``Parses function value with param`` () = 
+    "value param" 
     |> parseTemplateValue 
-    |> should equal (TemplateValue.Function("value", [TemplateValue.Constant("hello")]))
+    |> should equal (TemplateValue.Function("value", [ TemplateValue.SimpleValue("param")]))
 
 [<Test>]
-let ``Parses function with constant value and simple value`` () = 
+let ``Parses function value with more params`` () = 
+    "value param param2" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [ TemplateValue.SimpleValue("param"); TemplateValue.SimpleValue("param2")]))
+
+[<Test>]
+let ``Parses function with literal value`` () = 
+    "value(\"hello\")" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("hello")]))
+
+[<Test>]
+let ``Parses function with literal value and simple value`` () = 
     "equals(my, \"hello\")" 
     |> parseTemplateValue 
-    |> should equal (TemplateValue.Function("equals", [TemplateValue.SimpleValue("my"); TemplateValue.Constant("hello")]))
+    |> should equal (TemplateValue.Function("equals", [TemplateValue.SimpleValue("my"); TemplateValue.Literal("hello")]))
 
 [<Test>]
 let ``Parses method`` () = 
@@ -67,6 +79,17 @@ let ``Parses piped curried function value`` () =
             [
                 TemplateValue.SimpleValue("x")
                 TemplateValue.Function("fun1", [TemplateValue.SimpleValue("y"); TemplateValue.SimpleValue("value")])
+            ]))
+
+[<Test>]
+let ``Parses piped double curried function value`` () = 
+    "value |> fun1 x y z |> fun2 x" 
+    |> parseTemplateValue 
+    |> should equal (
+        TemplateValue.Function("fun2", 
+            [
+                TemplateValue.SimpleValue("x")
+                TemplateValue.Function("fun1", [TemplateValue.SimpleValue("x"); TemplateValue.SimpleValue("y");TemplateValue.SimpleValue("z"); TemplateValue.SimpleValue("value")])
             ]))
 
 [<Test>]
@@ -101,7 +124,6 @@ let ``Parses function value with inner function`` () =
             ]))
 
 [<Test>]
-[<Ignore("Issue investigated")>]
 let ``Parses function value with inner function (different format)`` () = 
     "add(x,mult(y,z))" 
     |> parseTemplateValue 
