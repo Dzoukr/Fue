@@ -26,7 +26,7 @@ let explain = function
     | ValueExpectedToBeBoolean(value) -> sprintf "Value \"%A\" is expected to be boolean" value
     | ValueExpectedToBeIterable(value) -> sprintf "Value \"%A\" is expected to be iterable" value
     | ElseConditionMustImmediatelyFollowIfCondition -> "Else condition must immediately follow If condition"
-    | ListOfDUExtractionHasDifferentLength(case, extr, vals) -> sprintf "Case %s has %i values associated, but you want to extract %i values" case extr vals
+    | ListOfDUExtractionHasDifferentLength(case, extr, cases) -> sprintf "Case %s has %i values associated, but you want to extract %i values" case cases extr
 
 type Result<'s> =
     | Success of 's
