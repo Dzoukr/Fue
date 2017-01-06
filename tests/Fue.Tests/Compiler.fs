@@ -128,8 +128,8 @@ let ``Compiles attribute values`` () =
 [<Test>]
 let ``Compiles additional info for forcycle`` () = 
     init |> add "items" ["A";"B";"C"]
-    |> fromFile "ForCyclePage.html"
-    |> should equal ("ForCyclePageCompiled.html" |> getFileContent)
+    |> fromText """<test><li fs-for="i in items">{{{i}}} is {{{$index}}}, {{{$iteration}}}, {{{$length}}}</li></test>"""
+    |> should equal """<test><li>A is 0, 1, 3</li><li>B is 1, 2, 3</li><li>C is 2, 3, 3</li></test>"""
 
 [<Test>]
 let ``Compiles with complex html`` () = 
@@ -374,3 +374,19 @@ let ``Compiles function with literal value`` () =
     init |> add "print" (fun x -> "printed " + x)
     |> fromText "{{{print('hello')}}}"
     |> should equal "printed hello"
+
+[<Test>]
+let ``Compiles for with custom tag`` () = 
+    let values = [0..1]
+    init 
+    |> add "values" values
+    |> fromText """<custom fs-for="loc in values">{{{loc}}}</custom>"""
+    |> should equal """<custom>0</custom><custom>1</custom>"""
+
+[<Test>]
+let ``Compiles for with option tag`` () = 
+    let values = [0..1]
+    init 
+    |> add "values" values
+    |> fromText """<option fs-for="loc in values">{{{loc}}}</option>"""
+    |> should equal """<option>0</option><option>1</option>"""

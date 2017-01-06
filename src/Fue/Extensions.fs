@@ -8,5 +8,7 @@ type HtmlNode with
 type HtmlDocument with
     static member ParseNode html =
         let doc = new HtmlDocument()
+        // fix for http://stackoverflow.com/questions/293342/htmlagilitypack-drops-option-end-tags
+        HtmlNode.ElementsFlags.Remove("option") |> ignore
         doc.LoadHtml(html)
         doc.DocumentNode

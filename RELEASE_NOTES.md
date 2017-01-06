@@ -1,3 +1,6 @@
+### 0.8.1 - January 04 2017
+* Fix for HtmlAgilityPack drops end of option tags
+
 ### 0.8.0 - January 04 2017
 * Constant renamed to Literal in core
 * Better parsing
