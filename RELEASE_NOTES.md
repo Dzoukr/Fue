@@ -1,3 +1,6 @@
+### 0.8.2 - January 09 2017
+* Added Async method for compiling from file
+
 ### 0.8.1 - January 04 2017
 * Fix for HtmlAgilityPack drops end of option tags
 

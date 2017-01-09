@@ -47,10 +47,6 @@ let extract = function
         |> sprintf "Success expected, but result state is Failure with errors: %s"
         |> failwith
 
-let tryExtract = function
-    | Success(item) -> Some item
-    | Failure(_) -> None
-
 let catch func =
     try
         func()
