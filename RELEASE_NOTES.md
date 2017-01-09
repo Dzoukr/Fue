@@ -1,3 +1,6 @@
+### 0.9 - January 09 2017
+* Fallback to old implementation (performace reasons)
+
 ### 0.8.2 - January 09 2017
 * Added Async method for compiling from file
 

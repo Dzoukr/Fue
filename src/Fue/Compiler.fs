@@ -38,13 +38,7 @@ let fromText str data =
     >>=> asDocument
     |> extract
 
-/// Compiles file content async
-let fromFileAsync (file:string) data = async {
-    use reader = file |> getFullPath |> File.OpenRead
-    let! content = reader.AsyncRead(reader.Length |> int)
-    let text = System.Text.Encoding.UTF8.GetString content
-    return data |> fromText text
-}
-
 /// Compiles file content
-let fromFile file data = fromFileAsync file data |> Async.RunSynchronously
+let fromFile file data = 
+    let content = File.ReadAllText (file |> getFullPath)
+    data |> fromText content
