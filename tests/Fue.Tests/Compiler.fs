@@ -274,8 +274,7 @@ let ``Compiles nested class value`` () =
 
 [<Test>]
 let ``Compiles record value`` () = 
-    let record = { Name = "Roman"; Age = 35; Nested = { Value = 123 } }
-    init |> add "rec" record
+    init |> add "rec" { Name = "Roman"; Age = 35; Nested = { Value = 123 } }
     |> fromText "{{{rec.Name}}}"
     |> should equal "Roman"
 
@@ -325,7 +324,14 @@ let ``Compiles nested record value`` () =
 let ``Compiles tuple function`` () = 
     let tuple = "Roman", 35
     init |> add "tuple" tuple |> add "fst" fst
-    |> fromText "{{{fst (tuple)}}}"
+    |> fromText "{{{fst tuple}}}"
+    |> should equal "Roman"
+
+[<Test>]
+let ``Compiles tuple function with pipe operator`` () = 
+    let tuple = "Roman", 35
+    init |> add "tuple" tuple |> add "fst" fst
+    |> fromText "{{{tuple |> fst}}}"
     |> should equal "Roman"
 
 [<Test>]

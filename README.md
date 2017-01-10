@@ -1,12 +1,12 @@
 # Fue
 
-F# templating library with simple syntax designed for smooth integration with F# applications.
+F# templating library with simple syntax designed for smooth work with F# types.
 
 ## Why another templating library?
 
-We have [Razor](https://github.com/Antaris/RazorEngine), we can use [Shaver](https://github.com/Dzoukr/Shaver), we have [DotLiquid](http://dotliquidmarkup.org/) - why another templating library? I know, "rendering on server side is so 2010", but sometimes we just need (or want) to do it - for emails, for documents, even for HTML (yes, some oldschoolers still do it on server). And then pain starts: You need to have plenty of *ViewModels* to transform data from Discriminated Unions, Tuples, etc... 
+We have [Razor](https://github.com/Antaris/RazorEngine), we have [DotLiquid](http://dotliquidmarkup.org/) - why another templating library? I know, "rendering on server side is so 2010", but sometimes we just need (or want) to do it - for emails, for documents, even for HTML (yes, some oldschoolers still do it on server). And then pain starts: You need to have plenty of *ViewModels* to transform data from Discriminated Unions, Tuples, etc... 
 
-Wouldn\`t be just great to have a library that allows you to use your original data without annoying only-for-template-engine-necessary transformation? Good news! Fue was designed as *ViewModels |> NoMore* library with focus on minimalistic API.
+Wouldn\`t be just great to have a library that allows you to use your original data without annoying only-for-template transformation? Good news! Fue was designed as *ViewModels |> NoMore* library with focus on minimalistic API.
 
 
 ## Installation
@@ -68,7 +68,7 @@ let compiledHtml =
 // compiledHtml now contains "<div>20</div>"
 ```
 
-And combine it with literals.
+And combine own functions with literals.
 
 ```fsharp
 let html = """<div>{{{printHello("Roman", myValue)}}}</div>"""
@@ -78,6 +78,27 @@ let compiledHtml =
     |> add "myValue" "Jiri"
     |> fromText html
 // compiledHtml now contains "<div>Hello Roman and Jiri</div>"
+```
+
+**Please note:** For better work with HTML templates, literals syntax can be marked with both 'single quotes' or "double quotes"
+
+
+
+## Supported types
+
+Fue is designed to work with *classes, records, tuples, options, discriminated unions as well as anonymous functions*.
+
+```fsharp
+type MyRecord = { Name : string }
+let html = """<div id="{{{id}}}">{{{fst myTuple}}} {{{myRec.Name}}}</div>"""
+let compiledHtml =
+    init
+    |> add "myTuple" ("Hello", 35)
+    |> add "fst" fst
+    |> add "myRec" { Name = "John"}
+    |> add "id" "someId"
+    |> fromText html
+// compiledHtml now contains """<div id="someId">Hello John</div>"""
 ```
 
 ## Rendering from file
@@ -186,7 +207,7 @@ let compiledHtml =
 
 ### fs-for
 
-For-cycle attribute
+*For-cycle* attribute
 
 ```fsharp
 let html = """<ul><li fs-for="item in items">{{{item}}}</li></ul>"""
@@ -210,7 +231,7 @@ let compiledHtml =
 
 ## Working with Option types
 
-`Option` types are fully supported and you can use them as you would directly from F# code.
+*Option* types are fully supported and you can use them as you would directly from F# code.
 
 ```fsharp
 let html = """<div fs-if="myOptionValue.IsSome">I got {{{myOptionValue.Value}}}</div>"""
@@ -232,11 +253,46 @@ let compiledHtml =
 // compiledHtml is "<div>I got nothing</div>"
 ```
 
-## Tips & Hints
+## Cheatsheet
 
-Here are some hints that are good to know when working with Fue library:
+Simple HTML snippet to show what can be achieved using Fue:
 
-* `Fue.Data.init` creates just empty `Map<string, obj>`. It does not contain any values or functions, so if you need e.g. `fst` or `snd` (for working with tuples), you need to add it manually: `init |> add "fst" fst |> add "snd" snd`
-* You can use *classes, records, tuples, discriminated unions as well as anonymous functions* as data
-* Currently, there is no caching or memoization behind `Fue.Compiler.fromText` and `Fue.Compiler.fromFile`.
-* Literals syntax can be marked with both 'single quotes' or "double quotes"
+```html
+<!--Template basics-->
+{{{value}}} - Static value
+{{{function()}}} - Function value
+{{{value1 |> fun1}}}
+
+<!--For-cycle-->
+<li fs-for="item in items">
+    {{{item.Name}}} {{{$index}}} {{{$length}}} {{{$iteration}}}
+</li>
+
+<!--Condition-->
+<div fs-if="someCondition" id="{{{id}}}">Value</div>
+<div fs-else></div>
+
+<!--Option types-->
+<div fs-if="someOption.IsSome">{{{someOption.Value}}}</div>
+<div fs-if="someOption.IsNone">Nothing</div>
+
+<!--Discriminated Union
+type UserAccess =
+    | Anonymous
+    | Admin of section:string
+-->
+    <div fs-du="item" fs-case="Anonymous">Anonymous</div>
+    <div fs-du="item" fs-case="Admin(section)">{{{section}}}</div>
+
+<!--Placeholder-->
+<fs-template fs-if="someCondition">
+    Some value
+</fs-template>
+```
+
+## Used libraries
+
+Fue is based on amazing [Html Agility Pack](http://htmlagilitypack.codeplex.com/) library.
+
+## Contribution
+Did you find any bug? Missing functionality? Please feel free to [Create issue](https://github.com/Dzoukr/Fue/issues) or [Pull request](https://github.com/Dzoukr/Fue/pulls).

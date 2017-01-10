@@ -1,3 +1,6 @@
+### 1.0.0 - January 10 2017
+* Public release
+
 ### 0.9 - January 09 2017
 * Fallback to old implementation (performace reasons)
 

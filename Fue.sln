@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{CD63D170
 	ProjectSection(SolutionItems) = preProject
 		build.fsx = build.fsx
 		nuget\Fue.nuspec = nuget\Fue.nuspec
+		LICENSE.md = LICENSE.md
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md
 	EndProjectSection

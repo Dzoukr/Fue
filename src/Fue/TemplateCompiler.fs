@@ -3,7 +3,6 @@
 open Core
 open Rop
 
-
 let private toTemplateValues (original, value) = original, (value |> Parser.parseTemplateValue)
 let private toCompiledValues data (original, templateValue) = original, (templateValue |> ValueCompiler.compile data)
 

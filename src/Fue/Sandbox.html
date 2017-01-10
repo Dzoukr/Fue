@@ -12,12 +12,15 @@
 <div fs-if="someCondition" id="{{{id}}}">Value</div>
 <div fs-else></div>
 
-<!--Discriminated Union-->
+<!--Option types-->
+<div fs-if="someOption.IsSome">{{{someOption.Value}}}</div>
+<div fs-if="someOption.IsNone">Nothing</div>
+
+<!--Discriminated Union
 type UserAccess =
     | Anonymous
     | Admin of section:string
-
-    <!--Two attributes variant-->
+-->
     <div fs-du="item" fs-case="Anonymous">Anonymous</div>
     <div fs-du="item" fs-case="Admin(section)">{{{section}}}</div>
 

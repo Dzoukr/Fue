@@ -11,7 +11,7 @@ open System.Diagnostics
 open Fake.Testing
 
 let title = "Fue" 
-let description = "F# templating library"
+let description = "F# templating library with simple syntax designed for smooth work with F# types"
 
 let appBuildDir = "./build/app/"
 let appSrcDir = "./src/"
@@ -33,6 +33,7 @@ Target "?" (fun _ ->
     printfn " [Build]"
     printfn "  > BuildTests"
     printfn "  > BuildApp"
+    printfn "  > Nuget"
     printfn " "
     printfn " [Run]"
     printfn "  > RunTests"

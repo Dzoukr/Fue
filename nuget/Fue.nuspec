@@ -6,7 +6,7 @@
     <version>@build.number@</version>
     <authors>Roman Provaznik</authors>
     <owners>Roman Provaznik</owners>
-    <licenseUrl>http://github.com/dzoukr/Fue/blob/master/LICENSE</licenseUrl>
+    <licenseUrl>http://github.com/dzoukr/Fue/blob/master/LICENSE.md</licenseUrl>
     <projectUrl>http://github.com/dzoukr/Fue</projectUrl>
     <iconUrl>https://avatars2.githubusercontent.com/u/851307?v=3&amp;s=64</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
