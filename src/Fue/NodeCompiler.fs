@@ -38,7 +38,7 @@ let private compileAttributes data attrs =
 let private prepareAttributes data cleanFunc = Seq.filter cleanFunc >> compileAttributes data
 
 let private newElements name children attributes = 
-    let node = HtmlDocument().CreateElement(name)
+    let node = HtmlDocument.Create().CreateElement(name)
     attributes |> Seq.iter (fun (name, value) -> node.SetAttributeValue(name, value) |> ignore)
     children |> List.iter (fun x -> if x <> null then node.AppendChild(x) |> ignore else ())
     node |> asResults
@@ -57,9 +57,9 @@ let private compileNode compileFun (source:HtmlNode) data attributesFilter =
     let elms = source.ChildNodes |> Seq.toList |> List.map (compileFun data) |> Rop.fold
     match source.Name with
     | "fs-template" -> elms
-    | name ->
+    | _ ->
         let attrs = source.Attributes |> prepareAttributes data attributesFilter
-        Rop.bind2 (newElements name) elms attrs
+        Rop.bind2 (newElements source.OriginalName) elms attrs
 
 let private compileIf compileFun (source:HtmlNode) data boolValue =
     boolValue |> ValueCompiler.compile data

@@ -396,3 +396,11 @@ let ``Compiles for with option tag`` () =
     |> add "values" values
     |> fromText """<option fs-for="loc in values">{{{loc}}}</option>"""
     |> should equal """<option>0</option><option>1</option>"""
+
+[<Test>]
+let ``Keeps case sensitivity``() =
+    let html = """<HelloWorld>{{{value}}}</HelloWorld>"""
+    init 
+    |> add "value" "It works!" 
+    |> fromText html
+    |> should equal "<HelloWorld>It works!</HelloWorld>"

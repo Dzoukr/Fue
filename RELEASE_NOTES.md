@@ -1,3 +1,6 @@
+### 1.1.0 - January 17 2017
+* Output now keeps original case (XAML support)
+
 ### 1.0.0 - January 10 2017
 * Public release
 

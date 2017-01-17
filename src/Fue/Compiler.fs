@@ -7,7 +7,7 @@ open HtmlAgilityPack
 open Extensions
 
 let private asDocument elms = 
-    let doc = HtmlDocument()
+    let doc = HtmlDocument.Create()
     elms |> List.iter (doc.DocumentNode.AppendChild >> ignore)
     match doc.DocumentNode.ChildNodes.Count with
     | 0 -> ""
