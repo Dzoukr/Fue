@@ -16,9 +16,9 @@ let private (==>) regex value =
     let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
     regex.Match(value).Groups
 
-let private splitByCurrying t = 
+let private splitByCurrying parseFn t = 
     let f,s = t |> splitToFirstAndList ' '
-    f, (s |> List.map SimpleValue)
+    f, (s |> List.map parseFn)
 
 let private (|TwoPartsMatch|_|) (groups:GroupCollection) =
     match groups.Count with
@@ -37,7 +37,7 @@ let parseTemplateValue text =
     let rec parse t =
         match "(.+)\|\>(.+)" ==> t with
         | TwoPartsMatch(parts, fnName) ->
-            let f,p = fnName |> splitByCurrying
+            let f,p = fnName |> splitByCurrying parse
             Function(f, p @ [parts |> parse])
         | _ -> 
             match "(.+?)\((.*)\)" ==> t, "(.+?)\s+(.*)" ==> (t |> clean) with

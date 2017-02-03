@@ -1,3 +1,6 @@
+### 1.1.1 - February 03 2017
+* Bugfix for parsing piped functions with literals
+
 ### 1.1.0 - January 17 2017
 * Output now keeps original case (XAML support)
 

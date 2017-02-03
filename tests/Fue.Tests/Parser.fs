@@ -49,6 +49,12 @@ let ``Parses function with literal value`` () =
     |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("hello")]))
 
 [<Test>]
+let ``Parses piped function with literal value`` () = 
+    "x |> value 'first'" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("first"); TemplateValue.SimpleValue("x")]))
+
+[<Test>]
 let ``Parses function with literal value and simple value`` () = 
     "equals(my, \"hello\")" 
     |> parseTemplateValue 
@@ -153,6 +159,14 @@ let ``Parses for-cycle value with function`` () =
     "x in y(z)" 
     |> parseForCycleAttribute 
     |> should equal (TemplateNode.ForCycle("x", TemplateValue.Function("y", [TemplateValue.SimpleValue("z")])) |> Some)
+
+[<Test>]
+let ``Parses for-cycle value with piped function`` () = 
+    "x in y |> z 'lit'" 
+    |> parseForCycleAttribute 
+    |> should equal (
+        TemplateNode.ForCycle("x", 
+            TemplateValue.Function("z", [TemplateValue.Literal("lit"); TemplateValue.SimpleValue("y")])) |> Some)
 
 [<Test>]
 let ``Does not parse illegal for-cycle value`` () = 
