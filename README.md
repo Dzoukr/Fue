@@ -268,6 +268,12 @@ Simple HTML snippet to show what can be achieved using Fue:
     {{{item.Name}}} {{{$index}}} {{{$length}}} {{{$iteration}}}
 </li>
 
+<!--For-cycle with direct tuple destructuring-->
+<!--let items = [("Hi","World");("Hello";"Planet")]-->
+<li fs-for="greetings,target in items">
+    I say {{{greetings}}} to {{{target}}}
+</li>
+
 <!--Condition-->
 <div fs-if="someCondition" id="{{{id}}}">Value</div>
 <div fs-else></div>
