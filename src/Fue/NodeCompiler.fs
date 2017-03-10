@@ -70,6 +70,28 @@ let private compileElse compileFun (source:HtmlNode) data boolValue =
     boolValue |> ValueCompiler.compile data
     >>= checkIsBool
     >>= (fun bValue -> if bValue = false then compileNode compileFun source data filterElse else [] |> success)
+
+let private getDestructuredFields =
+    StringUtils.split ',' 
+    >> List.map (StringUtils.clean >> StringUtils.replace "(" "" >> StringUtils.replace ")" "")
+
+let private areMappable list1 list2 = List.length list1 = List.length list2
+
+let private mapOneToOne (fields:string list) values data =
+    List.zip fields values
+    |> List.fold (fun acc item -> acc |> add (fst item) (snd item)) data
+
+let private addForCycleItem name value data =
+    match value |> Reflection.isTuple with
+    | true ->
+        let fields = getDestructuredFields name
+        let tupleValues = Reflection.getTupleFields value
+        
+        if areMappable fields tupleValues then
+            data |> mapOneToOne fields tupleValues
+        else
+            data |> add name value
+    | false -> data |> add name value
     
 let private compileForCycle compileFun (source:HtmlNode) data itemName cycle =
     cycle |> ValueCompiler.compile data
@@ -80,7 +102,8 @@ let private compileForCycle compileFun (source:HtmlNode) data itemName cycle =
             let index = (list |> Seq.findIndex (fun x -> x = itemValue))
             let dataWithItem = 
                 data 
-                |> add itemName itemValue 
+                //|> add itemName itemValue 
+                |> addForCycleItem itemName itemValue
                 |> add "$index" index
                 |> add "$iteration" (index + 1)
                 |> add "$length" length

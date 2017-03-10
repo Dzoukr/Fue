@@ -1,3 +1,6 @@
+### 1.2.0 - March 10 2017
+* Added support for direct tuples destructuring in fs-for cycle
+ 
 ### 1.1.1 - February 03 2017
 * Bugfix for parsing piped functions with literals
 

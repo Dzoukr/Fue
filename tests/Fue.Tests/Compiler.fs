@@ -404,3 +404,19 @@ let ``Keeps case sensitivity``() =
     |> add "value" "It works!" 
     |> fromText html
     |> should equal "<HelloWorld>It works!</HelloWorld>"
+
+[<Test>]
+let ``Supports tuple destructuring``() =
+    let html = """<li fs-for="(a,b) in list">{{{a}}}|{{{b}}}</li>"""
+    init 
+    |> add "list" [("a1","b1");("a2","b2")]
+    |> fromText html
+    |> should equal "<li>a1|b1</li><li>a2|b2</li>"
+
+[<Test>]
+let ``Supports tuple destructuring without parens``() =
+    let html = """<li fs-for="a,b in list">{{{a}}}|{{{b}}}</li>"""
+    init 
+    |> add "list" [("a1","b1");("a2","b2")]
+    |> fromText html
+    |> should equal "<li>a1|b1</li><li>a2|b2</li>"

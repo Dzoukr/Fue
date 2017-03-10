@@ -22,6 +22,8 @@ let getMethod key value =
 
 let isTuple obj = FSharpType.IsTuple(obj.GetType())
 
+let getTupleFields tuple = FSharpValue.GetTupleFields(tuple) |> Array.toList
+
 let toObjectTuple value =
     let props = FSharpValue.GetTupleFields(value)
     let types = [| for _ in 1..props.Length do yield obj().GetType() |]

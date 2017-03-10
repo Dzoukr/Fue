@@ -10,6 +10,8 @@ let splitAsFunction (separator:char) (s:string) =
     let pattern = sprintf "%c(?![^(]*\))" separator
     Regex.Split(s, pattern) |> Array.toList |> List.filter (isWhiteSpace >> not)
 
+let replace (what:string) (withWhat:string) (where:string) = where.Replace(what, withWhat)
+
 let splitToFunctionParams = splitAsFunction ',' >> List.map clean
 let splitToFirstAndList (separator:char) (s:string) = 
     let parts = s |> split separator |> List.map clean
