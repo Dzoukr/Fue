@@ -229,6 +229,18 @@ let compiledHtml =
 // compiledHtml is "<li>A is 0, 1, 3</li><li>B is 1, 2, 3</li><li>C is 2, 3, 3</li>"
 ```
 
+Since version 1.2.0 there is support for tuples destructuring:
+
+```fsharp
+let html = """<li fs-for="greetings,target in items">I say {{{greetings}}} to {{{target}}}</li>"""
+let compiledHtml =
+    init
+    |> add "items" [("Hi","World");("Hello";"Planet")]
+    |> fromText html
+// compiledHtml is "<li>I say Hi to World</li><li>I say Hello to Planet</li>"
+```
+
+
 ## Working with Option types
 
 *Option* types are fully supported and you can use them as you would directly from F# code.
@@ -266,6 +278,12 @@ Simple HTML snippet to show what can be achieved using Fue:
 <!--For-cycle-->
 <li fs-for="item in items">
     {{{item.Name}}} {{{$index}}} {{{$length}}} {{{$iteration}}}
+</li>
+
+<!--For-cycle with direct tuple destructuring-->
+<!--let items = [("Hi","World");("Hello";"Planet")]-->
+<li fs-for="greetings,target in items">
+    I say {{{greetings}}} to {{{target}}}
 </li>
 
 <!--Condition-->
