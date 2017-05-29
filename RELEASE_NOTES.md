@@ -1,3 +1,8 @@
+### 1.3.0 - May 29 2017
+* Fix for literals with spaces (Issue #4)
+* Supports using numbers in templates (Issue #5)
+* Improved parsing logic
+
 ### 1.2.0 - March 10 2017
 * Added support for direct tuples destructuring in fs-for cycle
  

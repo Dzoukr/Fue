@@ -1,6 +1,7 @@
 ﻿module Fue.Parser
 
 open Core
+open System
 open StringUtils
 open System.Text.RegularExpressions
 open HtmlAgilityPack
@@ -17,7 +18,10 @@ let private (==>) regex value =
     regex.Match(value).Groups
 
 let private splitByCurrying parseFn t = 
-    let f,s = t |> splitToFirstAndList ' '
+    
+    let regex = new Regex(""""[^"]+"?|'[^']+'?|[^'"\s]+""", RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
+    let matches = [ for m in regex.Matches(t) do yield m.Groups.[0].Value ]
+    let f,s = (matches |> List.head |> clean),(matches |> List.tail |> List.map clean)
     f, (s |> List.map parseFn)
 
 let private (|TwoPartsMatch|_|) (groups:GroupCollection) =
@@ -33,26 +37,67 @@ let private (|OnePartMatch|_|) (groups:GroupCollection) =
     | 2 -> groups.[1].Value |> clean |> Some
     | _ -> None
 
+let private numberOrSimple value =
+    match Int32.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with
+    | true, value -> Literal(value)
+    | _ ->
+        match Decimal.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with 
+        | true, value -> Literal(value)
+        | _ ->
+            match Double.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with 
+            | true, value -> Literal(value)
+            | _ -> SimpleValue(value)
+
 let parseTemplateValue text =
-    let rec parse t =
+    
+    let pipedFn parseFn t =
         match "(.+)\|\>(.+)" ==> t with
         | TwoPartsMatch(parts, fnName) ->
-            let f,p = fnName |> splitByCurrying parse
-            Function(f, p @ [parts |> parse])
-        | _ -> 
-            match "(.+?)\((.*)\)" ==> t, "(.+?)\s+(.*)" ==> (t |> clean) with
-            | TwoPartsMatch(fnName, parts), _ ->
-                let parts = parts |> splitToFunctionParams |> List.map parse
-                Function(fnName, parts)
-            | _, TwoPartsMatch(fnName, parts) ->
-                let parts = parts |> split ' ' |> List.map parse
-                Function(fnName, parts)
-            | _ -> 
-                match "\"(.+)\"" ==> t, "'(.+)'" ==> t with
-                | OnePartMatch(constant), _ 
-                | _, OnePartMatch(constant) -> Literal(constant)
-                | _ -> t |> SimpleValue
-    parse text
+            let f,p = fnName |> splitByCurrying parseFn
+            Function(f, p @ [parts |> parseFn]) |> Some
+        | _ -> None
+    
+    let bracketFn parseFn t =
+        match """(.+?)\((.*)\)""" ==> t with
+        | TwoPartsMatch(fnName, parts) ->
+            let parts = parts |> splitToFunctionParams |> List.map parseFn
+            Function(fnName, parts) |> Some
+        | _ -> None
+    
+    let plainFn parseFn t =
+        match """(.+?)\s+(.*)""" ==> (t |> clean) with
+        | TwoPartsMatch(fnName, parts) ->
+            let parts = parts |> split ' ' |> List.map parseFn
+            Function(fnName, parts) |> Some
+        | _ -> None
+    
+    let literalSQFn parseFn t = 
+        match """^'([^']+)'$""" ==> (t |> clean) with
+        | OnePartMatch(constant) -> Literal(constant) |> Some
+        | _ -> None
+    
+    let literalDQFn parseFn t = 
+        match """^"([^"]+)"$""" ==> (t |> clean) with
+        | OnePartMatch(constant) -> Literal(constant) |> Some
+        | _ -> None
+    
+    let parseFns = [literalSQFn;literalDQFn;pipedFn;bracketFn;plainFn;]
+
+    let rec newParse t =
+        let foldFn (acc:TemplateValue option) item =
+            if acc.IsSome then acc
+            else t |> item
+
+        let chainResult =
+            parseFns 
+            |> List.map (fun x -> x newParse)
+            |> List.fold foldFn None
+        
+        match chainResult with
+        | Some v -> v
+        | None -> t |> numberOrSimple
+
+    newParse text
 
 let parseForCycleAttribute forAttr =
     match "(.+) in (.+)" ==> forAttr with

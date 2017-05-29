@@ -62,6 +62,7 @@
     <Content Include="App.config" />
     <Compile Include="Parser.fs" />
     <Compile Include="Compiler.fs" />
+    <Compile Include="Issues.fs" />
     <None Include="SimplePage.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
