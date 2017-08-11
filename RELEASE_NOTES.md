@@ -1,3 +1,6 @@
+### 1.3.1 - August 11 2017
+* Fix incorrect deletion of the end "param" tag (Issue #8)
+
 ### 1.3.0 - May 29 2017
 * Fix for literals with spaces (Issue #4)
 * Supports using numbers in templates (Issue #5)
