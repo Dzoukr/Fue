@@ -132,6 +132,12 @@ let ``Compiles additional info for forcycle`` () =
     |> should equal """<test><li>A is 0, 1, 3</li><li>B is 1, 2, 3</li><li>C is 2, 3, 3</li></test>"""
 
 [<Test>]
+let ``Compiles $last and $not-last`` () =
+    init |> add "items" ["A";"B";"C"]
+    |> fromText """<test><li fs-for="i in items">{{{i}}}<fs-template fs-if="$not-last">,</fs-template><fs-template fs-if="$last">!</fs-template></li></test>"""
+    |> should equal """<test><li>A,</li><li>B,</li><li>C!</li></test>"""
+
+[<Test>]
 let ``Compiles with complex html`` () = 
     init 
     |> add "menu" """<!-- MENU --><div class="menu"><a href="javascript:;">Test</a></div>"""
