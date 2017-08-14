@@ -98,15 +98,17 @@ let private compileForCycle compileFun (source:HtmlNode) data itemName cycle =
     >>= checkIsIterable
     >>= (fun list ->
         let length = Seq.length list
-        list |> Seq.map (fun itemValue ->
-            let index = (list |> Seq.findIndex (fun x -> x = itemValue))
-            let dataWithItem = 
-                data 
-                //|> add itemName itemValue 
+        list |> Seq.mapi (fun index itemValue ->
+            let iteration = index + 1
+            let dataWithItem =
+                data
+                //|> add itemName itemValue
                 |> addForCycleItem itemName itemValue
                 |> add "$index" index
-                |> add "$iteration" (index + 1)
+                |> add "$iteration" iteration
                 |> add "$length" length
+                |> add "$last" (length = iteration)
+                |> add "$not-last" (length <> iteration)
             compileNode compileFun source dataWithItem filterFor
         ) |> Seq.toList |> Rop.fold
     )
