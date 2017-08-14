@@ -1,3 +1,7 @@
+### 1.4.0 - August 14 2017
+* Added $is-last and $is-not-last values for loops (thanks @otto-geb!)
+* Fixed quadratic complexity of loops (thanks @otto-geb!)
+
 ### 1.3.1 - August 11 2017
 * Fix incorrect deletion of the end "param" tag (Issue #8)
 

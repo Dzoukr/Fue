@@ -107,8 +107,8 @@ let private compileForCycle compileFun (source:HtmlNode) data itemName cycle =
                 |> add "$index" index
                 |> add "$iteration" iteration
                 |> add "$length" length
-                |> add "$last" (length = iteration)
-                |> add "$not-last" (length <> iteration)
+                |> add "$is-last" (length = iteration)
+                |> add "$is-not-last" (length <> iteration)
             compileNode compileFun source dataWithItem filterFor
         ) |> Seq.toList |> Rop.fold
     )

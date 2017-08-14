@@ -218,7 +218,7 @@ let compiledHtml =
 // compiledHtml is "<ul><li>A</li><li>B</li><li>C</li></ul>"
 ```
 
-Common task for rendering lists is to show row number, index or whole list length. Auto-created values `{{{$index}}}`, `{{{$iteration}}}` and `{{{$length}}}` are here to help.
+Common task for rendering lists is to show row number, index or whole list length. Auto-created values `{{{$index}}}`, `{{{$iteration}}}`, `{{{$length}}}`, `{{{$is-last}}}` and `{{{$is-not-last}}}` are here to help.
 
 ```fsharp
 let html = """<li fs-for="i in items">{{{i}}} is {{{$index}}}, {{{$iteration}}}, {{{$length}}}</li>"""
@@ -278,6 +278,8 @@ Simple HTML snippet to show what can be achieved using Fue:
 <!--For-cycle-->
 <li fs-for="item in items">
     {{{item.Name}}} {{{$index}}} {{{$length}}} {{{$iteration}}}
+    <div fs-if={{{$is-not-last}}}>Shown if not last item of collection</div>
+    <div fs-if={{{$is-last}}}>Shown only for the last item of collection</div>
 </li>
 
 <!--For-cycle with direct tuple destructuring-->
