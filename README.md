@@ -278,8 +278,8 @@ Simple HTML snippet to show what can be achieved using Fue:
 <!--For-cycle-->
 <li fs-for="item in items">
     {{{item.Name}}} {{{$index}}} {{{$length}}} {{{$iteration}}}
-    <div fs-if={{{$is-not-last}}}>Shown if not last item of collection</div>
-    <div fs-if={{{$is-last}}}>Shown only for the last item of collection</div>
+    <div fs-if="$is-not-last">Shown if not last item of collection</div>
+    <div fs-if="$is-last">Shown only for the last item of collection</div>
 </li>
 
 <!--For-cycle with direct tuple destructuring-->
