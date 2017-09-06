@@ -10,111 +10,47 @@ open Fake.AssemblyInfoFile
 open System.Diagnostics
 open Fake.Testing
 
-let title = "Fue" 
-let description = "F# templating library with simple syntax designed for smooth work with F# types"
-
-let appBuildDir = "./build/app/"
-let appSrcDir = "./src/"
-let testsBuildDir = "./build/tests/"
-let testsSrcDir = "./tests"
-
-let nugetBinDir = "./nuget/bin/"
-let nugetOutputDir = "./nuget/output/"
-
+let appSrc = "src/Fue"
+let testsSrc = "tests/Fue.Tests"
 
 // Read release notes & version info from RELEASE_NOTES.md
 let release = File.ReadLines "RELEASE_NOTES.md" |> ReleaseNotesHelper.parseReleaseNotes
 
-// Targets
-Target "?" (fun _ ->
-    printfn " *********************************************************"
-    printfn " *        Available options (call 'build <Target>')      *"
-    printfn " *********************************************************"
-    printfn " [Build]"
-    printfn "  > BuildTests"
-    printfn "  > BuildApp"
-    printfn "  > Nuget"
-    printfn " "
-    printfn " [Run]"
-    printfn "  > RunTests"
-    printfn " "
-    printfn " [Help]"
-    printfn "  > ?"
-    printfn " "
-    printfn " *********************************************************"
-)
+Target "Nuget" <| fun () ->
+    let toNotes = List.map (fun x -> x + System.Environment.NewLine) >> List.fold (+) ""
+    let args = 
+        [
+            "PackageId=\"Fue\""
+            "Title=\"Fue\""
+            "Description=\"F# templating library with simple syntax designed for smooth work with F# types\""
+            "Summary=\"F# templating library with simple syntax designed for smooth work with F# types\""
+            sprintf "PackageVersion=\"%s\"" release.NugetVersion
+            sprintf "PackageReleaseNotes=\"%s\"" (release.Notes |> toNotes)
+            "PackageLicenseUrl=\"http://github.com/dzoukr/Fue/blob/master/LICENSE.md\""
+            "PackageProjectUrl=\"http://github.com/dzoukr/Fue\""
+            "PackageIconUrl=\"https://avatars2.githubusercontent.com/u/851307?v=3&amp;s=64\""
+            "PackageTags=\"FSharp Templating F# Templates\""
+            "Copyright=\"Roman Provazník - 2017\""
+            "Authors=\"Roman Provazník\""
+        ] |> List.map (fun x -> "/p:" + x)
 
-Target "AssemblyInfo" <| fun () ->
-    for file in !! ("./src/**/AssemblyInfo*.fs") do
-        let version = release.AssemblyVersion
-        let dirName = FileInfo(file).Directory.Name
-        CreateFSharpAssemblyInfo file
-           [ Attribute.Title title
-             Attribute.Product title
-             Attribute.Description description
-             Attribute.Version version
-             Attribute.FileVersion version]
-
-Target "CleanApp" (fun _ ->
-    CleanDir appBuildDir
-)
-
-Target "CleanTests" (fun _ ->
-    CleanDir testsBuildDir
-)
+    Fake.DotNetCli.Pack (fun p -> { p with Project = appSrc; OutputPath = "../../nuget"; AdditionalArgs = args })
 
 Target "BuildApp" (fun _ ->
-    for file in !! (appSrcDir + "**/*.fsproj") do
-        let dir = appBuildDir + FileInfo(file).Directory.Name
-        MSBuildRelease dir "Build" [file] |> Log "Build-Output:"
-)
-
-Target "BuildTests" (fun _ ->
-    for file in !! (testsSrcDir + "/**/*.fsproj") do
-        let dir = testsBuildDir + FileInfo(file).Directory.Name
-        MSBuildRelease dir "Build" [file] |> Log "TestBuild-Output:"
+    Fake.DotNetCli.Build (fun p -> { p with Project = appSrc; Configuration = "Debug";})
 )
 
 Target "RunTests" (fun _ ->
-    for file in !! (testsBuildDir + "**/*.Tests.dll") do
-        let dir = FileInfo(file).DirectoryName
-        NUnit3 (fun p -> { p with ResultSpecs = [dir + "\TestResult.xml"]}) [file]
+     Fake.DotNetCli.Test (fun p -> { p with Project = testsSrc; Configuration = "Debug";})
 )
 
-Target "Nuget" <| fun () ->
-    CreateDir nugetOutputDir
-    CreateDir nugetBinDir
-    let nugetFiles = [
-        "Fue.xml"
-        "Fue.dll"
-    ]
-    nugetFiles |> List.map (fun f -> appBuildDir + "Fue/" + f) |> CopyFiles nugetBinDir
-    
-    // Format the release notes
-    let releaseNotes = release.Notes |> String.concat "\n"
-    NuGet (fun p -> 
-        { p with   
-            Project = title
-            Description = description
-            Version = release.NugetVersion
-            ReleaseNotes = releaseNotes
-            OutputPath = nugetOutputDir
-            References = nugetFiles |> List.filter (fun x -> x.EndsWith(".dll"))
-            Files = nugetFiles |> List.map (fun f -> ("bin/" + f, Some("lib/net45"), None))
-            Dependencies =
-            [
-                "HtmlAgilityPack", GetPackageVersion ("./packages") "HtmlAgilityPack"
-            ]
-        })
-        "nuget/Fue.nuspec"
+Target "Clean" (fun _ -> 
+    DeleteDir (appSrc + "/bin")
+    DeleteDir (appSrc + "/obj")
+    DeleteDir "nuget" 
+)
 
-
-
-// Dependencies
-"CleanTests" ==> "BuildTests"
-"BuildTests"  ==> "RunTests"
-"CleanApp" ==> "AssemblyInfo" ==> "BuildApp"
-"RunTests" ==> "BuildApp" ==> "Nuget"
+"Clean" ==> "RunTests" ==>  "Nuget"
 
 // start build
-RunTargetOrDefault "?"
+RunTargetOrDefault "BuildApp"

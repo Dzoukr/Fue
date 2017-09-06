@@ -1,3 +1,6 @@
+### 1.5.0 - September 06 2017
+* Move to .NET Standard 2.0
+
 ### 1.4.0 - August 14 2017
 * Added $is-last and $is-not-last values for loops (thanks @otto-geb!)
 * Fixed quadratic complexity of loops (thanks @otto-geb!)
