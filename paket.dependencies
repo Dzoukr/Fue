@@ -1,9 +1,10 @@
 framework: auto-detect
-source http://nuget.org/api/v2
+source https://api.nuget.org/v3/index.json
 
 nuget FAKE
 nuget HtmlAgilityPack
 nuget NUnit
-nuget NUnit.ConsoleRunner
+nuget NUnit3TestAdapter
+nuget Microsoft.NET.Test.Sdk
 nuget Nuget.CommandLine
 nuget FsUnit
