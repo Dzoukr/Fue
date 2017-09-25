@@ -50,7 +50,7 @@ let extract = function
 let catch func =
     try
         func()
-    with :? System.Exception as ex -> GeneralError(ex) |> fail
+    with ex -> GeneralError(ex) |> fail
 
 let bind f result =
     match result with
@@ -73,5 +73,4 @@ let fold results =
     results |> List.fold foldFn (Success [])
 
 let (>>=) result f = bind f result
-let (>>=>) result f = bind (f >> Success) result
-let (>=>>) f result = bind result ( f |> Success)
+let (<!>) result f = bind (f >> Success) result

@@ -426,3 +426,22 @@ let ``Supports tuple destructuring without parens``() =
     |> add "list" [("a1","b1");("a2","b2")]
     |> fromText html
     |> should equal "<li>a1|b1</li><li>a2|b2</li>"
+
+[<Test>]
+let ``Supports functions for options with value``() =
+    let html = """{{{myValue |> myFunc}}}"""
+    init 
+    |> add "myValue" (Some "string")
+    |> add "myFunc" (fun (s:string option) -> if s.IsSome then s.Value else "NOPE")
+    |> fromText html
+    |> should equal "string"
+
+[<Test>]
+let ``Supports functions for options without value``() =
+    let html = """{{{myValue |> myFunc}}}"""
+    init 
+    |> add "myValue" None
+    |> add "myFunc" (fun (s:string option) -> if s.IsSome then s.Value else "NOPE")
+    |> fromText html
+    |> should equal "NOPE"
+

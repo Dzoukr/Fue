@@ -1,3 +1,6 @@
+### 1.5.1 - September 25 2017
+* Fixed problems with Option values boxed to null
+
 ### 1.5.0 - September 06 2017
 * Move to .NET Standard 2.0
 

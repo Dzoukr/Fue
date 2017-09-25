@@ -31,7 +31,7 @@ let private filterNone (attr:HtmlAttribute) = true
 
 let private compileAttributes data attrs = 
     attrs 
-    |> Seq.map (fun (a:HtmlAttribute) -> TemplateCompiler.compile data a.Value >>=> (fun res -> [a.OriginalName, res]))
+    |> Seq.map (fun (a:HtmlAttribute) -> TemplateCompiler.compile data a.Value <!> (fun res -> [a.OriginalName, res]))
     |> Seq.toList 
     |> Rop.fold
 
@@ -49,7 +49,7 @@ let private extractCase case (extracts:string list) union =
         (false, []) |> success
     else 
         prepareExtracts case extracts values
-        >>=> (fun (ex,_) ->
+        <!> (fun (ex,_) ->
             (true,[ for i in [0..ex.Length - 1] do yield ex.[i], values.[i] ])
         )
 
@@ -140,13 +140,13 @@ let compile data (source:HtmlNode) =
         let compileUnion = compileUnion comp source data
 
         Parser.parseNode(source)
-        >=>> (fun node ->
+        |> (fun node ->
             match node with
             | Some(IfCondition(boolValue)) -> boolValue |> compileIf
             | Some(ElseCondition) -> 
                 source |> findNonEmptyPreviousSibling 
-                >=>> failForNone (ElseConditionMustImmediatelyFollowIfCondition)
-                >>=> Parser.parseNode
+                |> failForNone (ElseConditionMustImmediatelyFollowIfCondition)
+                <!> Parser.parseNode
                 >>= (fun n ->
                     match n with
                     | Some(IfCondition(boolValue)) -> boolValue |> compileElse
@@ -156,7 +156,7 @@ let compile data (source:HtmlNode) =
             | Some(DiscriminatedUnion(union,case,extracts)) -> compileUnion union case extracts
             | None ->
                 match source.Name with
-                | "#text" | "#comment" -> source.InnerHtml |> TemplateCompiler.compile data >>=> HtmlDocument.ParseNode >>= asResults
+                | "#text" | "#comment" -> source.InnerHtml |> TemplateCompiler.compile data <!> HtmlDocument.ParseNode >>= asResults
                 | _ -> compileNode comp source data filterNone
         )
     comp data source

@@ -35,7 +35,7 @@ let fromText str data =
     |> Seq.toList
     |> List.map (NodeCompiler.compile data)
     |> Rop.fold
-    >>=> asDocument
+    <!> asDocument
     |> extract
 
 /// Compiles file content

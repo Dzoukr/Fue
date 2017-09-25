@@ -20,7 +20,7 @@ let getMethod key value =
     |> Array.filter (fun x -> x.Name = key)
     |> Array.tryHead
 
-let isTuple obj = FSharpType.IsTuple(obj.GetType())
+let isTuple obj = obj |> (isNull >> not) && FSharpType.IsTuple(obj.GetType())
 
 let getTupleFields tuple = FSharpValue.GetTupleFields(tuple) |> Array.toList
 

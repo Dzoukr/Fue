@@ -56,7 +56,7 @@ let private boxedArr arr =
     | 0 -> [| () |> box |], [||], [| obj().GetType() |]
     | _ -> 
         let boxed = arr |> Array.map boxed
-        let types = arr |> Array.map (fun x -> x.GetType())
+        let types = arr |> Array.map (fun x -> if x |> (isNull >> not) then x.GetType() else null)
         boxed, boxed, types
 
 let private extractSimpleValue value = 
@@ -72,10 +72,10 @@ let compile data value =
             match v with
             | SimpleValue(valueName) -> valueName |> search data |> extractSimpleValue
             | Function(fnName, pars) -> 
-                let funcParams, methodParams, types = pars |> List.map comp |> List.map Rop.extract |> List.toArray |> boxedArr
-                fnName |> search data >>=> (fun v ->
+                let funcParams, methodParams, types = pars |> List.map (comp >> Rop.extract) |> List.toArray |> boxedArr
+                fnName |> search data <!> (fun v ->
                     match v with
-                    | Value(func) -> 
+                    | Value(func) ->
                         let invoke = func |> getFunctionInvoke types
                         invoke.Invoke(func, funcParams)
                     | Method(ob, mi) -> mi.Invoke(ob, methodParams)
