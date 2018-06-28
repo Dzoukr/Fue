@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>Fue</name></assembly>
+<members>
+<member name="M:Fue.ValueCompiler.compile(Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object},Fue.Core.TemplateValue)">
+<summary>
+ Compiles template value into obj
+</summary>
+</member>
+<member name="M:Fue.TemplateCompiler.compileSafe(Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object},System.String)">
+<summary>
+ Compiles templated string into final string with escaping dangerous chars
+</summary>
+</member>
+<member name="M:Fue.TemplateCompiler.compile(Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object},System.String)">
+<summary>
+ Compiles templated string into final string
+</summary>
+</member>
+<member name="M:Fue.NodeCompiler.compile(Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object})">
+<summary>
+ Applies attributes/interpolation logic onto Html node tree
+</summary>
+</member>
+<member name="M:Fue.Compiler.fromFileSafe(System.String,Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object})">
+<summary>
+ Compiles file content with escaping dangerous chars
+</summary>
+</member>
+<member name="M:Fue.Compiler.fromFile(System.String,Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object})">
+<summary>
+ Compiles file content
+</summary>
+</member>
+<member name="P:Fue.Compiler.fromTextSafe">
+<summary>
+ Compiles text with escaping dangerous chars
+</summary>
+</member>
+<member name="P:Fue.Compiler.fromText">
+<summary>
+ Compiles text
+</summary>
+</member>
+</members>
+</doc>

@@ -30,7 +30,7 @@ Target "Nuget" <| fun () ->
             "PackageProjectUrl=\"http://github.com/dzoukr/Fue\""
             "PackageIconUrl=\"https://avatars2.githubusercontent.com/u/851307?v=3&amp;s=64\""
             "PackageTags=\"FSharp Templating F# Templates\""
-            "Copyright=\"Roman Provazník - 2017\""
+            "Copyright=\"Roman Provazník - 2018\""
             "Authors=\"Roman Provazník\""
         ] |> List.map (fun x -> "/p:" + x)
 

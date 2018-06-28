@@ -445,3 +445,10 @@ let ``Supports functions for options without value``() =
     |> fromText html
     |> should equal "NOPE"
 
+[<Test>]
+let ``Supports fromTextSafe function``() =
+    let html = """{{{myValue}}}"""
+    init 
+    |> add "myValue" "<i>Hello</i>"
+    |> fromTextSafe html
+    |> should equal "&lt;i&gt;Hello&lt;/i&gt;"

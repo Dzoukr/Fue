@@ -130,8 +130,8 @@ let rec private findNonEmptyPreviousSibling (source:HtmlNode) =
     | null -> None
     | sibling -> if sibling.OuterHtml |> StringUtils.isWhiteSpace then findNonEmptyPreviousSibling sibling else Some sibling
 
-/// Applies attributes/interpolation logic onto Html node tree
-let compile data (source:HtmlNode) =
+
+let private _compile compiler data (source:HtmlNode) =
     let rec comp data source =
         
         let compileIf = compileIf comp source data
@@ -156,7 +156,11 @@ let compile data (source:HtmlNode) =
             | Some(DiscriminatedUnion(union,case,extracts)) -> compileUnion union case extracts
             | None ->
                 match source.Name with
-                | "#text" | "#comment" -> source.InnerHtml |> TemplateCompiler.compile data <!> HtmlDocument.ParseNode >>= asResults
+                | "#text" | "#comment" -> source.InnerHtml |> compiler data <!> HtmlDocument.ParseNode >>= asResults
                 | _ -> compileNode comp source data filterNone
         )
     comp data source
+
+/// Applies attributes/interpolation logic onto Html node tree
+let compile data = _compile TemplateCompiler.compile data
+let compileSafe data = _compile TemplateCompiler.compileSafe data

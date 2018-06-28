@@ -28,17 +28,26 @@ let private extract = function
 
 let private getChildNodes str = (str |> HtmlDocument.ParseNode).ChildNodes
 
-/// Compiles text
-let fromText str data =
+let private _fromText compiler str data =
     str
     |> getChildNodes
     |> Seq.toList
-    |> List.map (NodeCompiler.compile data)
+    |> List.map (compiler data)
     |> Rop.fold
     <!> asDocument
     |> extract
+
+/// Compiles text
+let fromText = _fromText NodeCompiler.compile
+/// Compiles text with escaping dangerous chars
+let fromTextSafe = _fromText NodeCompiler.compileSafe
 
 /// Compiles file content
 let fromFile file data = 
     let content = File.ReadAllText (file |> getFullPath)
     data |> fromText content
+
+/// Compiles file content with escaping dangerous chars
+let fromFileSafe file data = 
+    let content = File.ReadAllText (file |> getFullPath)
+    data |> fromTextSafe content

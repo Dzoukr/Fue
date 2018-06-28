@@ -1,3 +1,7 @@
+### 1.6 - June 28 2018
+* Added fromFileSafe function
+* Added fromTextSafe function
+
 ### 1.5.1 - September 25 2017
 * Fixed problems with Option values boxed to null
 
