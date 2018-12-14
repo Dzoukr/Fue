@@ -28,14 +28,18 @@ let private extract = function
 
 let private getChildNodes str = (str |> HtmlDocument.ParseNode).ChildNodes
 
-let private _fromText compiler str data =
-    str
-    |> getChildNodes
-    |> Seq.toList
-    |> List.map (compiler data)
-    |> Rop.fold
-    <!> asDocument
-    |> extract
+let private _fromText compiler str =
+    let template =
+        str
+        |> getChildNodes
+        |> Seq.toList
+
+    fun data ->
+        template
+        |> List.map (compiler data)
+        |> Rop.fold
+        <!> asDocument
+        |> extract
 
 /// Compiles text
 let fromText = _fromText NodeCompiler.compile
@@ -43,11 +47,11 @@ let fromText = _fromText NodeCompiler.compile
 let fromTextSafe = _fromText NodeCompiler.compileSafe
 
 /// Compiles file content
-let fromFile file data = 
+let fromFile file =
     let content = File.ReadAllText (file |> getFullPath)
-    data |> fromText content
+    fromText content
 
 /// Compiles file content with escaping dangerous chars
-let fromFileSafe file data = 
+let fromFileSafe file =
     let content = File.ReadAllText (file |> getFullPath)
-    data |> fromTextSafe content
+    fromTextSafe content
