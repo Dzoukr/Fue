@@ -22,12 +22,12 @@
  Applies attributes/interpolation logic onto Html node tree
 </summary>
 </member>
-<member name="M:Fue.Compiler.fromFileSafe(System.String,Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object})">
+<member name="M:Fue.Compiler.fromFileSafe(System.String)">
 <summary>
  Compiles file content with escaping dangerous chars
 </summary>
 </member>
-<member name="M:Fue.Compiler.fromFile(System.String,Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object})">
+<member name="M:Fue.Compiler.fromFile(System.String)">
 <summary>
  Compiles file content
 </summary>

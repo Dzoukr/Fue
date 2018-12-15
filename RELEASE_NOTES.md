@@ -1,3 +1,6 @@
+### 1.7 - December 15 2018
+* Fixed #12 - (thanks @petejohanson)
+
 ### 1.6 - June 28 2018
 * Added fromFileSafe function
 * Added fromTextSafe function
