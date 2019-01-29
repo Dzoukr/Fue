@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/dzoukrcz/Fue/_apis/build/status/Fue?branchName=master)](https://dev.azure.com/dzoukrcz/Fue/_build/latest?definitionId=2&branchName=master)
+
 # Fue
 
 F# templating library with simple syntax designed for smooth work with F# types.
