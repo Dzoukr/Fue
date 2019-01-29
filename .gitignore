@@ -13,7 +13,6 @@ TestResult.xml
 *.userprefs
 log.csv
 log.txt
-.paket/paket.exe
 paket-files
 *.ide
 *.bak
