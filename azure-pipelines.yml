@@ -1,0 +1,17 @@
+pool:
+  vmImage: 'vs2017-win2016'
+
+trigger:
+  batch: true
+  branches:
+    include: [ master, develop ]
+
+steps:
+- task: DotNetCoreInstaller@0
+  displayName: Install .net core sdk 2.2.100
+  inputs:
+    version: '2.2.100'
+    packageType: sdk
+
+- script: build runTests
+  displayName: Run tests
