@@ -237,7 +237,7 @@ Since version 1.2.0 there is support for tuples destructuring:
 let html = """<li fs-for="greetings,target in items">I say {{{greetings}}} to {{{target}}}</li>"""
 let compiledHtml =
     init
-    |> add "items" [("Hi","World");("Hello";"Planet")]
+    |> add "items" [("Hi","World");("Hello","Planet")]
     |> fromText html
 // compiledHtml is "<li>I say Hi to World</li><li>I say Hello to Planet</li>"
 ```
