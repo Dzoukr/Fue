@@ -1,5 +1,6 @@
 ﻿module Fue.Compiler
 
+open System.Text.RegularExpressions
 open Rop
 open System.IO
 open System
@@ -55,3 +56,40 @@ let fromFile file =
 let fromFileSafe file =
     let content = File.ReadAllText (file |> getFullPath)
     fromTextSafe content
+
+/// Compiles none html text
+let fromNoneHtmlText (str: string) map' =
+    let troubleMakers = [
+        ("<", "&gt;")
+        (">", "&lt;")
+    ]
+    
+    let toNoneTroubledString (str': string) =
+        troubleMakers
+        |> List.fold (fun (s: string) -> s.Replace) str'
+    
+    let toTroubledString (str': string) =
+        troubleMakers
+        |> List.fold (fun (s: string) (t1, t2) -> s.Replace(t2, t1)) str'
+        
+    let returnFsCommands (str': string) =
+        Regex.Matches(str', @"(?<gt>&gt;/?)\s*?(?:fs-\w+).+?(?<lt>&lt;)")
+        |> Seq.cast
+        |> Seq.fold (fun (acc: string) (m: Match) ->
+            m.Value
+            |> toTroubledString
+            |> (fun s -> acc.Replace(m.Value, s))
+        ) str'
+
+    let compile str' = _fromText NodeCompiler.compile str' map'                
+                
+    str
+    |> toNoneTroubledString
+    |> returnFsCommands
+    |> compile
+    |> toTroubledString
+        
+/// Compiles none html file content
+let fromNoneHtmlFile file =
+    let content = File.ReadAllText (file |> getFullPath)
+    fromNoneHtmlText content    
