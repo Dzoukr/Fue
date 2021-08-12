@@ -42,3 +42,13 @@ let ``Parses correctly with spaces (Issue #4)``() =
                 TemplateValue.Literal("MMMM yyyy")
                 TemplateValue.Function("now", [])
             ]))
+    
+[<Test>]
+let ``Parse angel brackets correctly and do not add closing endtag (Issue #16)``() =
+    let template = """<fs-template fs-if="render">ArrayList<Class<{{{change(obj)}}}>></fs-template>"""
+    init
+    |> add "obj" "Entity"
+    |> add "change" (fun (x: string) -> x.ToUpper())
+    |> add "render" true
+    |> fromNoneHtmlText template
+    |> should equal "ArrayList<Class<ENTITY>>"
