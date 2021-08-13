@@ -1,7 +1,10 @@
-### 1.7 - December 15 2018
+### 1.8.0 - August 12 2021
+* Compiles without generating closing tags #17
+
+### 1.7.0 - December 15 2018
 * Fixed #12 - (thanks @petejohanson)
 
-### 1.6 - June 28 2018
+### 1.6.0 - June 28 2018
 * Added fromFileSafe function
 * Added fromTextSafe function
 

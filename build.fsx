@@ -34,7 +34,7 @@ Target "Nuget" <| fun () ->
             "Authors=\"Roman Provazník\""
         ] |> List.map (fun x -> "/p:" + x)
 
-    Fake.DotNetCli.Pack (fun p -> { p with Project = appSrc; OutputPath = "../../nuget"; AdditionalArgs = args })
+    Fake.DotNetCli.Pack (fun p -> { p with Project = appSrc; OutputPath = "./nuget"; AdditionalArgs = args })
 
 Target "BuildApp" (fun _ ->
     Fake.DotNetCli.Build (fun p -> { p with Project = appSrc; Configuration = "Debug";})
