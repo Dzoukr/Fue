@@ -6,23 +6,158 @@ open Fue.Core
 open Fue.Parser
 open HtmlAgilityPack
 
+let simpleValue = "value"
+let literal = """ "value" """
+let multilineLiteral = """ "first
+second" """
+let singleQuoteLiteral = "'value'"
+let trippleQuotedLiteral = " \"\"\"value\"\"\" "
+let trippleQuotedLiteralMultiLine = " \"\"\"value
+
+with mutliple lines
+\"\"\" "
+let singleLineRecord = "{ test = \"123\" }"
+let singleLineRecordNoSpace = "{test=\"123\"}"
+let singleLineRecord2 = "{ test = \"123\"; other = \"abc\" }"
+
+let multiLineRecord = "{
+    test = \"123\"
+}"
+let multiLineRecord2 = "{
+    test = \"123\"
+    other = \"abc\"
+}"
+let multiLineRecordWithFunction = "{
+    other = func()
+}"
+let multiLineRecordWithFunctionAndParameter = "{
+    other = func(\"test\")
+}"
+let multiLineRecordWithFunctionAndParameterVariable = "{
+    other = func(test)
+}"
+
+
+
 [<Test>]
 let ``Parses simple value`` () = 
-    "value" 
+    simpleValue
     |> parseTemplateValue 
     |> should equal (TemplateValue.SimpleValue("value"))
 
 [<Test>]
 let ``Parses literal value`` () = 
-    """ "value" """
+    literal
     |> parseTemplateValue 
     |> should equal (TemplateValue.Literal("value"))
 
 [<Test>]
-let ``Parses literal value (single quote)`` () = 
-    "'value'"
+let ``Parses literal value (multi line)`` () = 
+    multilineLiteral
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Literal("first
+second"))
+
+[<Test>]
+let ``Parses literal value (triple quote)`` () = 
+    trippleQuotedLiteral
     |> parseTemplateValue 
     |> should equal (TemplateValue.Literal("value"))
+
+[<Test>]
+let ``Parses literal value (triple quote multiline)`` () = 
+    trippleQuotedLiteralMultiLine
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Literal("value\n\nwith mutliple lines\n"))
+
+[<Test>]
+let ``Parses literal value (single quote)`` () = 
+    singleQuoteLiteral
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Literal("value"))
+
+
+[<Test>]
+let ``Parses record (single line)`` () = 
+    let result =
+        Map.empty
+        |> Map.add "test" (TemplateValue.Literal("123"))
+
+    singleLineRecord
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
+
+[<Test>]
+let ``Parses record (single line no space)`` () = 
+    let result =
+        Map.empty
+        |> Map.add "test" (TemplateValue.Literal("123"))
+
+    singleLineRecordNoSpace
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
+
+[<Test>]
+let ``Parses record (single line multiple entries)`` () = 
+    let result =
+        Map.empty
+        |> Map.add "test" (TemplateValue.Literal("123"))
+        |> Map.add "other" (TemplateValue.Literal("abc"))
+
+    singleLineRecord2
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
+
+[<Test>]
+let ``Parses record (multi line)`` () =
+    let result =
+        Map.empty
+        |> Map.add "test" (TemplateValue.Literal("123"))
+
+    multiLineRecord
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
+
+[<Test>]
+let ``Parses record (multi line, multiple entries)`` () =
+    let result =
+        Map.empty
+        |> Map.add "test" (TemplateValue.Literal("123"))
+        |> Map.add "other" (TemplateValue.Literal("abc"))
+
+    multiLineRecord2
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
+
+[<Test>]
+let ``Parses record with function call`` () =
+    let result =
+        Map.empty
+        |> Map.add "other" (TemplateValue.Function("func", []))
+
+    multiLineRecordWithFunction
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
+
+[<Test>]
+let ``Parses record with function call (and parameter)`` () =
+    let result =
+        Map.empty
+        |> Map.add "other" (TemplateValue.Function("func", [ TemplateValue.Literal("test")]))
+
+    multiLineRecordWithFunctionAndParameter
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
+
+[<Test>]
+let ``Parses record with function call (and variable)`` () =
+    let result =
+        Map.empty
+        |> Map.add "other" (TemplateValue.Function("func", [ TemplateValue.SimpleValue("test")]))
+
+    multiLineRecordWithFunctionAndParameterVariable
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
 
 [<Test>]
 let ``Parses function value`` () = 
@@ -47,6 +182,70 @@ let ``Parses function with literal value`` () =
     "value(\"hello\")" 
     |> parseTemplateValue 
     |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("hello")]))
+
+
+[<Test>]
+let ``Parses function with literal value (triple quoted)`` () = 
+    "value(\"\"\"hello\"\"\")" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("hello")]))
+
+[<Test>]
+let ``Parses function with literal value (triple quoted multi line)`` () = 
+    "value(\"\"\"first
+second\"\"\")" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("first\nsecond")]))
+
+[<Test>]
+let ``Parses function with literal value (triple quoted multi line and special characters)`` () = 
+    "value(\"\"\"
+<a href=\"#footnote-1\" id=\"footnote-1-source\"&gt;&lt;sup&gt;[1]&lt;/sup&gt;
+...
+&lt;p id=\"footnote-1\"&gt;
+	With a much smaller feature set &lt;a href=\"#footnote-1-source\">back&lt;a&gt;
+&lt;/p&gt;
+\"\"\")"
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("\n<a href=\"#footnote-1\" id=\"footnote-1-source\"&gt;&lt;sup&gt;[1]&lt;/sup&gt;\n...\n&lt;p id=\"footnote-1\"&gt;\n	With a much smaller feature set &lt;a href=\"#footnote-1-source\">back&lt;a&gt;\n&lt;/p&gt;\n")]))
+
+[<Test>]
+let ``Parses function with record`` () = 
+    let result =
+        Map.empty
+        |> Map.add "test" (TemplateValue.Literal("hello"))
+
+    "value({ test = \"hello\" })" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Record(result)]))
+
+[<Test>]
+let ``Parses function with record (multi line)`` () = 
+    let result =
+        Map.empty
+        |> Map.add "test" (TemplateValue.Literal("hello"))
+        |> Map.add "testAB" (TemplateValue.Literal("Hy123"))
+
+    "value({
+    test = \"hello\"
+    testAB = \"Hy123\"
+})" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Record(result)]))
+
+[<Test>]
+let ``Parses function with tuple and record (multi line)`` () = 
+    let result =
+        Map.empty
+        |> Map.add "test" (TemplateValue.Literal("hello"))
+        |> Map.add "testAB" (TemplateValue.Literal("Hy123"))
+
+    "value(\"first\", {
+    test = \"hello\"
+    testAB = \"Hy123\"
+})" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("first"); TemplateValue.Record(result)]))
 
 [<Test>]
 let ``Parses piped function with literal value`` () = 

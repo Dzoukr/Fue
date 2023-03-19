@@ -38,7 +38,7 @@ let failForNone error = function
     | Some(res) -> res |> success
     | None -> error |> fail
 
-let extract = function
+let rec extract: Result<obj> -> obj = function
     | Success(item) -> item
     | Failure(errors) -> 
         errors 

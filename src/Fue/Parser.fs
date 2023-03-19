@@ -6,6 +6,7 @@ open StringUtils
 open System.Text.RegularExpressions
 open HtmlAgilityPack
 open Extensions
+open FParsec
 
 let forAttr = "fs-for"
 let ifAttr = "fs-if"
@@ -14,8 +15,9 @@ let unionSourceAttr = "fs-du"
 let unionCaseAttr = "fs-case"
 
 let private (==>) regex value =
-    let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
-    regex.Match(value).Groups
+    let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Multiline)
+    let m = regex.Match(value)
+    m.Groups
 
 let private splitByCurrying parseFn t = 
     
@@ -48,6 +50,87 @@ let private numberOrSimple value =
             | true, value -> Literal(value)
             | _ -> SimpleValue(value)
 
+/// Parse an escaped char
+let escapedChar = 
+    [ 
+    // (stringToMatch, resultChar)
+    ("\\\"",'\"')      // quote
+    ("\\\\",'\\')      // reverse solidus 
+    ("\\/",'/')        // solidus
+    ("\\b",'\b')       // backspace
+    ("\\f",'\f')       // formfeed
+    ("\\n",'\n')       // newline
+    ("\\r",'\r')       // cr
+    ("\\t",'\t')       // tab
+    ] 
+    // convert each pair into a parser
+    |> List.map (fun (toMatch,result) -> 
+        pstring toMatch >>% result)
+    // and combine them into one
+    |> choice
+
+/// Parse a unicode char
+let unicodeChar = 
+
+    // set up the "primitive" parsers        
+    let backslash = pchar '\\'
+    let uChar = pchar 'u'
+    let hexdigit = anyOf (['0'..'9'] @ ['A'..'F'] @ ['a'..'f'])
+
+    // convert the parser output (nested tuples)
+    // to a char
+    let convertToChar (((h1,h2),h3),h4) = 
+        let str = sprintf "%c%c%c%c" h1 h2 h3 h4
+        Int32.Parse(str,Globalization.NumberStyles.HexNumber) |> char
+
+    // set up the main parser
+    backslash  >>. uChar >>. hexdigit .>>. hexdigit .>>. hexdigit .>>. hexdigit
+    |>> convertToChar 
+
+
+/// Parse an unescaped char
+let unescapedChar = 
+    satisfyL (fun ch -> ch <> '\\' && ch <> '\"') "char"
+
+let trippleQuotedString =
+    let singleQuote =
+        pchar '"'// .>> notFollowedByString "\"\""
+
+    let trippleQuotes = pstring "\"\"\"" <?> "quote"
+    let jchar = singleQuote <|> unescapedChar <|> escapedChar <|> unicodeChar <|> newline
+
+    trippleQuotes >>. manyCharsTill jchar trippleQuotes <?> "triple quoted string"
+
+let quote = pchar '"' <?> "quote"
+
+let jchar = unescapedChar <|> escapedChar <|> unicodeChar
+
+let singleQuotedString =
+
+    // set up the main parser
+    quote >>. manyChars jchar .>> quote 
+
+let quotedString =
+    trippleQuotedString <|> singleQuotedString .>> eof
+
+let record =
+    let leftBracket = pchar '{'
+    let rightBracket = pchar '}'
+
+    let recordLiteralEntry =
+        let sep = (spaces >>. pchar '=' .>> spaces)
+        let key = manyCharsTill asciiLetter sep
+        let value = quote >>. manyCharsTill jchar quote .>> (optional (skipAnyOf [';'; '\n'; ' ']) >>. spaces ) |>> sprintf "\"%s\""
+
+        key .>>. value
+
+    let recordEntry = choice [
+        recordLiteralEntry
+    ]
+
+    
+    leftBracket >>. spaces >>. many recordEntry .>> rightBracket
+
 let parseTemplateValue text =
     
     let pipedFn parseFn t =
@@ -58,7 +141,7 @@ let parseTemplateValue text =
         | _ -> None
     
     let bracketFn parseFn t =
-        match """(.+?)\((.*)\)""" ==> t with
+        match """(.+?)\(((?:.|\r|\n)*)\)""" ==> t with
         | TwoPartsMatch(fnName, parts) ->
             let parts = parts |> splitToFunctionParams |> List.map parseFn
             Function(fnName, parts) |> Some
@@ -80,8 +163,32 @@ let parseTemplateValue text =
         match """^"([^"]+)"$""" ==> (t |> clean) with
         | OnePartMatch(constant) -> Literal(constant) |> Some
         | _ -> None
+
+    let literalTQFn parseFn t = 
+        t
+        |> clean
+        |> run quotedString
+        |> function
+        | ParserResult.Failure (err, _, _) -> None
+        | ParserResult.Success (constant, _, _) -> Literal(constant) |> Some
+
+    let record (parseFn: string -> TemplateValue) t =
+        t
+        |> clean
+        |> run record
+        |> function
+        | ParserResult.Failure (err, _, _) ->
+            None
+        | ParserResult.Success (recordEntries, _, _) ->
+            recordEntries
+            |> List.map(fun (key, value) ->
+                (key, parseFn <| value)
+            )
+            |> Map.ofList
+            |> Record
+            |> Some
     
-    let parseFns = [literalSQFn;literalDQFn;pipedFn;bracketFn;plainFn;]
+    let parseFns = [record;literalSQFn;literalDQFn;literalTQFn;pipedFn;bracketFn;plainFn;]
 
     let rec newParse t =
         let foldFn (acc:TemplateValue option) item =
@@ -129,7 +236,7 @@ let parseNode (node:HtmlNode) =
     | _ -> None
 
 let parseTextInterpolations text = 
-    let regex = new Regex("{{{(.*?)}}}", RegexOptions.IgnoreCase)
+    let regex = new Regex("{{{((.|\r|\n)*?)}}}", RegexOptions.IgnoreCase)
     [for m in regex.Matches(text) do yield m.Groups] 
     |> List.map (fun g -> g.[0].Value, (g.[1].Value |> clean))
     |> List.filter (fun x -> snd x <> "")

@@ -16,5 +16,8 @@
     <Compile Include="NodeCompiler.fs" />
     <Compile Include="Compiler.fs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FParsec" Version="1.1.1" />
+  </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

@@ -81,5 +81,25 @@ let compile data value =
                     | Method(ob, mi) -> mi.Invoke(ob, methodParams)
                 )
             | Literal(value) -> value |> success
+            | Record(record) ->
+                let compiledRecord =
+                    record
+                    |> Map.map (fun _ value -> (comp >> Rop.extract) value)
+
+                compiledRecord
+                |> box
+                |> Success
+                //|> Map.fold(fun (errors) _ value ->
+                //    match value with
+                //    | Success _ -> errors
+                //    | Failure f ->  f @ errors
+                //) (List.empty)
+                //|> function
+                //| [] -> 
+                //    compiledRecord
+                //    |> box
+                //    |> success
+                //| errors -> Failure errors
+                    
         comp value
     )
