@@ -3,6 +3,7 @@
 type TemplateValue =
     | SimpleValue of name:string
     | Function of name:string * parameters:TemplateValue list
+    | PipedFunction of TemplateValue * TemplateValue
     | Literal of value:obj
     | Record of Map<string, TemplateValue>
 

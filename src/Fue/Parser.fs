@@ -208,6 +208,25 @@ let argumentExpressions = choice [
     attempt variable
 ]
 
+let opp = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
+let pipeExpression = opp.ExpressionParser
+opp.TermParser <- attempt expression .>> spaces
+opp.AddOperator(
+    InfixOperator(
+        "|>",
+        spaces,
+        1,
+        Associativity.Left,
+        fun left right ->
+            match right with
+            | SimpleValue fnName ->
+                Function(fnName, [ left ])
+            | Function (fn, args) ->
+                Function(fn, args @ [ left ])
+    )
+)
+    
+
 let parseFunction =
     let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
         sepBy1 expression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
@@ -258,7 +277,7 @@ let parseTemplateValue text =
     let rec newParse t =
         t
         |> clean
-        |> run (expression .>>? spaces .>> eof)
+        |> run (pipeExpression .>>? spaces .>> eof)
         |> function
         | ParserResult.Failure (err, _, _) ->
             None
