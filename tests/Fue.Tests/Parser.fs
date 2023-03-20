@@ -36,6 +36,10 @@ let multiLineRecordWithFunctionAndParameter = "{
 let multiLineRecordWithFunctionAndParameterVariable = "{
     other = func(test)
 }"
+let multiLineRecordWithPipedFunctionAndParameterVariable = "{
+    pipe = test |> func
+    multiPipe = test |> func1 \"param\" |> func2
+}"
 
 
 
@@ -159,6 +163,19 @@ let ``Parses record with function call (and variable)`` () =
     |> should equal (TemplateValue.Record(result))
 
 [<Test>]
+let ``Parses record with piped function call (and variable)`` () =
+    let result =
+        Map.empty
+        |> Map.add "pipe" (TemplateValue.Function("func", [ TemplateValue.SimpleValue("test")]))
+        |> Map.add "multipipe" (TemplateValue.Function("func2", [
+            TemplateValue.Function("func1", [ TemplateValue.Literal("param"); TemplateValue.SimpleValue("test")])
+        ]))
+
+    multiLineRecordWithPipedFunctionAndParameterVariable
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Record(result))
+
+[<Test>]
 let ``Parses function value`` () = 
     "value()" 
     |> parseTemplateValue 
@@ -263,6 +280,15 @@ let ``Parses piped function with literal value`` () =
     |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("first"); TemplateValue.SimpleValue("x")]))
 
 [<Test>]
+let ``Can't pipe into literal`` () = 
+    (fun () ->
+        "x |> 'first'" 
+        |> parseTemplateValue 
+        |> ignore
+    )
+    |> should throw typeof<System.Exception>
+
+[<Test>]
 let ``Parses function with literal value and simple value`` () = 
     "equals(my, \"hello\")" 
     |> parseTemplateValue 
@@ -273,6 +299,16 @@ let ``Parses method`` () =
     "record.Method()" 
     |> parseTemplateValue 
     |> should equal (TemplateValue.Function("record.Method", []))
+
+[<Test>]
+let ``Parses literal piped into function`` () = 
+    "\"value\" |>fun1 " 
+    |> parseTemplateValue 
+    |> should equal (
+        TemplateValue.Function("fun1", 
+            [
+                TemplateValue.Literal("value")
+            ]))
 
 [<Test>]
 let ``Parses piped function value`` () = 
@@ -386,7 +422,7 @@ let ``Does not parse illegal for-cycle value`` () =
 let ``Parses discriminated union case with no extraction`` () = 
     let res = "Case" |> parseUnionCaseAttribute
     res |> fst |> should equal "Case"
-    res |> snd |> should equal []
+    res |> snd |> should be Empty
     
 [<Test>]
 let ``Parses discriminiated case with extract`` () = 
