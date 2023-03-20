@@ -299,6 +299,12 @@ let compiledHtml =
 Simple HTML snippet to show what can be achieved using Fue:
 
 ```html
+<!--Literals-->
+{{{'single quoted literal'}}}
+{{{"single line literal"}}}
+{{{"""multi-line
+literal"""}}}
+
 <!--Template basics-->
 {{{value}}} - Static value
 {{{function()}}} - Function value
