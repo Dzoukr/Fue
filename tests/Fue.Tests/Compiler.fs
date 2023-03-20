@@ -500,3 +500,17 @@ let ``Supports passing records to functions``() =
     |> add "test" (fun map -> sprintf "%A" map)
     |> fromText html
     |> should equal "map [(\"number\", \"123\"); (\"textContent\", \"first<\")]"
+
+[<Test>]
+let ``Supports passing records to functions (with nested record)``() =
+    let result = Map [("number", box "123"); ("nestedContent", box <| Map [("foo", "bar")])]
+    let html = "{{{test( {
+    number = \"123\"
+    nestedContent = {
+        foo = \"bar\"
+    }
+})}}}"
+    init 
+    |> add "test" (fun map -> sprintf "%A" map)
+    |> fromText html
+    |> should equal """map [("nestedContent", map [("foo", "bar")]); ("number", "123")]"""

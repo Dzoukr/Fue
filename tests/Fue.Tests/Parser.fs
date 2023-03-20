@@ -167,7 +167,7 @@ let ``Parses record with piped function call (and variable)`` () =
     let result =
         Map.empty
         |> Map.add "pipe" (TemplateValue.Function("func", [ TemplateValue.SimpleValue("test")]))
-        |> Map.add "multipipe" (TemplateValue.Function("func2", [
+        |> Map.add "multiPipe" (TemplateValue.Function("func2", [
             TemplateValue.Function("func1", [ TemplateValue.Literal("param"); TemplateValue.SimpleValue("test")])
         ]))
 
@@ -465,4 +465,16 @@ let ``Parses text interpolations`` () =
     let expected = [("{{{abc}}}","abc");("{{{ def }}}","def")]
     "{{{abc}}} xxx {{{ def }}} {{{}}} {{{   }}}"
     |> parseTextInterpolations 
+    |> should equal expected
+
+[<Test>]
+let ``Parses nested records`` () = 
+    let expected = Record <| Map [("number", Literal "123"); ("nestedContent", Record <| Map [("foo", Literal "bar")])]
+    "{
+        number = \"123\"
+        nestedContent = {
+            foo = \"bar\"
+        }
+    }"
+    |> parseTemplateValue 
     |> should equal expected

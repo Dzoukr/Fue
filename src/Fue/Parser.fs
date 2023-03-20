@@ -159,6 +159,9 @@ let literal =
 
 let expression, expressionImpl = createParserForwardedToRef()
 
+let opp = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
+let pipeExpression = opp.ExpressionParser <?> "pipe expression parser" <!> "pipe"
+
 let record =
     let leftBracket = pchar '{'
     let rightBracket = pchar '}'
@@ -167,7 +170,7 @@ let record =
         let sep = (spaces >>. pchar '=' .>> spaces)
         let key = identifier .>> sep
 
-        key .>>. expression
+        key .>>. pipeExpression
 
     let newlineOrSemiColon =
         manySatisfy (function '\r'|'\n'|';'|' ' -> true | _ -> false)
@@ -178,7 +181,7 @@ let record =
     |>> (Map.ofList >> TemplateValue.Record)
 
 let expressionBetweenParens =
-    between (pchar '(') (pchar ')') expression
+    between (pchar '(') (pchar ')') pipeExpression
     <?> "expression between parens"
     <!> "expression between parens"
 
@@ -196,8 +199,6 @@ let argumentExpressions = choice [
     attempt variable
 ]
 
-let opp = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
-let pipeExpression = opp.ExpressionParser
 opp.TermParser <- attempt expression .>> spaces
 opp.AddOperator(
     InfixOperator(
@@ -218,26 +219,28 @@ opp.AddOperator(
     
 
 let parseFunction =
+    let spaceOrTab = optional <| satisfy (fun c -> c = ' ' || c = '\t')
+
     let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
         sepBy1 expression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
         <!> "comma separated expression"
         |>> fun x -> x
 
     let spaceSeparatedExpressions: Parser<TemplateValue list, unit> =
-        sepEndBy1 argumentExpressions spaces <?> "space separated expression"
+        sepEndBy1 argumentExpressions spaceOrTab <?> "space separated expression"
         <!> "space separated expression"
         |>> fun x -> x
 
     let emptyArguments =
-        skipString "()" <?> "empty arguments"
+        spaceOrTab >>. skipString "()" <?> "empty arguments"
         <!> "empty arguments"
         |>> fun _ -> []
     let parensArguments =
-        skipChar '(' >>. spaces >>. commaSeparatedExpressions .>> spaces .>> skipChar ')' <?> "argument list"
+        spaceOrTab >>. skipChar '(' >>. spaces >>. commaSeparatedExpressions .>> spaces .>> skipChar ')' <?> "argument list"
         <!> "argument list"
         |>> fun expr -> expr
     let curriedArguments =
-        spaces >>. spaceSeparatedExpressions .>> spaces <?> "curried arguments"
+        spaceOrTab >>. spaceSeparatedExpressions .>> spaces <?> "curried arguments"
         <!> "curried arguments"
 
     let arguments =
@@ -247,7 +250,7 @@ let parseFunction =
             attempt curriedArguments
         ] <!> "arguments"
         
-    (spaces >>. identifier) .>>. (spaces >>. arguments)
+    (spaces >>. identifier) .>>. (arguments)
     <?> "function call"
     <!> "function call"
     |>> (fun (id, pars) -> Function(id, pars))
