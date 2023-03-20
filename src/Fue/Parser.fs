@@ -19,24 +19,12 @@ let private (==>) regex value =
     let m = regex.Match(value)
     m.Groups
 
-let private splitByCurrying parseFn t = 
-    
-    let regex = new Regex(""""[^"]+"?|'[^']+'?|[^'"\s]+""", RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
-    let matches = [ for m in regex.Matches(t) do yield m.Groups.[0].Value ]
-    let f,s = (matches |> List.head |> clean),(matches |> List.tail |> List.map clean)
-    f, (s |> List.map parseFn)
-
 let private (|TwoPartsMatch|_|) (groups:GroupCollection) =
     match groups.Count with
     | 3 ->
         let fnName = groups.[1].Value |> clean
         let parts = groups.[2].Value |> clean
         (fnName, parts) |> Some
-    | _ -> None
-
-let private (|OnePartMatch|_|) (groups:GroupCollection) =
-    match groups.Count with
-    | 2 -> groups.[1].Value |> clean |> Some
     | _ -> None
 
 /// Parse an escaped char
