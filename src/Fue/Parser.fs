@@ -222,7 +222,7 @@ let parseFunction =
     let spaceOrTab = optional <| satisfy (fun c -> c = ' ' || c = '\t')
 
     let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
-        sepBy1 expression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
+        sepBy1 pipeExpression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
         <!> "comma separated expression"
         |>> fun x -> x
 
