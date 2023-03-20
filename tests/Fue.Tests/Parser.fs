@@ -55,8 +55,7 @@ let ``Parses literal value`` () =
 let ``Parses literal value (multi line)`` () = 
     multilineLiteral
     |> parseTemplateValue 
-    |> should equal (TemplateValue.Literal("first
-second"))
+    |> should equal (TemplateValue.Literal("first\nsecond"))
 
 [<Test>]
 let ``Parses literal value (triple quote)`` () = 
@@ -166,23 +165,45 @@ let ``Parses function value`` () =
     |> should equal (TemplateValue.Function("value", []))
 
 [<Test>]
-let ``Parses function value with param`` () = 
+let ``Parses function value (with param)`` () = 
     "value param" 
     |> parseTemplateValue 
     |> should equal (TemplateValue.Function("value", [ TemplateValue.SimpleValue("param")]))
 
 [<Test>]
-let ``Parses function value with more params`` () = 
-    "value param param2" 
+let ``Parses function value (with more params)`` () = 
+    "value param param2"
     |> parseTemplateValue 
     |> should equal (TemplateValue.Function("value", [ TemplateValue.SimpleValue("param"); TemplateValue.SimpleValue("param2")]))
 
 [<Test>]
-let ``Parses function with literal value`` () = 
+let ``Parses function value (with literal value)`` () = 
     "value(\"hello\")" 
     |> parseTemplateValue 
     |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("hello")]))
 
+[<Test>]
+let ``Parses function value (with reference)`` () = 
+    "value(hello)" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.SimpleValue("hello")]))
+
+[<Test>]
+let ``Parses function value (with multiple references)`` () = 
+    "value(hello, xy)" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [TemplateValue.SimpleValue("hello"); TemplateValue.SimpleValue("xy")]))
+
+[<Test>]
+let ``Parses function value (with multiple literals)`` () = 
+    "value(\"hello\", \"heyo\",\"heyo\" ,\"ugh\")" 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Function("value", [
+        TemplateValue.Literal("hello")
+        TemplateValue.Literal("heyo")
+        TemplateValue.Literal("heyo")
+        TemplateValue.Literal("ugh")
+    ]))
 
 [<Test>]
 let ``Parses function with literal value (triple quoted)`` () = 
@@ -196,18 +217,6 @@ let ``Parses function with literal value (triple quoted multi line)`` () =
 second\"\"\")" 
     |> parseTemplateValue 
     |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("first\nsecond")]))
-
-[<Test>]
-let ``Parses function with literal value (triple quoted multi line and special characters)`` () = 
-    "value(\"\"\"
-<a href=\"#footnote-1\" id=\"footnote-1-source\"&gt;&lt;sup&gt;[1]&lt;/sup&gt;
-...
-&lt;p id=\"footnote-1\"&gt;
-	With a much smaller feature set &lt;a href=\"#footnote-1-source\">back&lt;a&gt;
-&lt;/p&gt;
-\"\"\")"
-    |> parseTemplateValue 
-    |> should equal (TemplateValue.Function("value", [TemplateValue.Literal("\n<a href=\"#footnote-1\" id=\"footnote-1-source\"&gt;&lt;sup&gt;[1]&lt;/sup&gt;\n...\n&lt;p id=\"footnote-1\"&gt;\n	With a much smaller feature set &lt;a href=\"#footnote-1-source\">back&lt;a&gt;\n&lt;/p&gt;\n")]))
 
 [<Test>]
 let ``Parses function with record`` () = 

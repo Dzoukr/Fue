@@ -39,17 +39,6 @@ let private (|OnePartMatch|_|) (groups:GroupCollection) =
     | 2 -> groups.[1].Value |> clean |> Some
     | _ -> None
 
-let private numberOrSimple value =
-    match Int32.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with
-    | true, value -> Literal(value)
-    | _ ->
-        match Decimal.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with 
-        | true, value -> Literal(value)
-        | _ ->
-            match Double.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with 
-            | true, value -> Literal(value)
-            | _ -> SimpleValue(value)
-
 /// Parse an escaped char
 let escapedChar = 
     [ 
@@ -87,122 +76,197 @@ let unicodeChar =
     backslash  >>. uChar >>. hexdigit .>>. hexdigit .>>. hexdigit .>>. hexdigit
     |>> convertToChar 
 
+    
+
+let (<!>) (p: Parser<_,_>) label : Parser<_,_> =
+    fun stream ->
+        printfn "%A: Entering %s" stream.Position label
+        let reply = p stream
+        
+        match reply.Status with
+        | ReplyStatus.Ok ->
+            printfn "%A: Leaving %s (%A)" stream.Position label reply.Status
+        | ReplyStatus.Error ->
+            printfn "%A: Leaving %s (%A)" stream.Position label reply.Status
+            printfn "%A" (ErrorMessageList.ToSortedArray reply.Error |> Array.map (fun x -> x.ToString()))
+        | ReplyStatus.FatalError ->
+            printfn "%A: Leaving %s (%A)" stream.Position label reply.Status
+            printfn "%A" (ErrorMessageList.ToSortedArray reply.Error)
+
+        reply
 
 /// Parse an unescaped char
 let unescapedChar = 
     satisfyL (fun ch -> ch <> '\\' && ch <> '\"') "char"
 
-let trippleQuotedString =
-    let singleQuote =
-        pchar '"'// .>> notFollowedByString "\"\""
-
-    let trippleQuotes = pstring "\"\"\"" <?> "quote"
-    let jchar = singleQuote <|> unescapedChar <|> escapedChar <|> unicodeChar <|> newline
-
-    trippleQuotes >>. manyCharsTill jchar trippleQuotes <?> "triple quoted string"
-
+let singleQuote = pchar ''' <?> "quote"
 let quote = pchar '"' <?> "quote"
 
 let jchar = unescapedChar <|> escapedChar <|> unicodeChar
 
-let singleQuotedString =
+let identifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c || c = '.') <?> "identifier"
 
-    // set up the main parser
-    quote >>. manyChars jchar .>> quote 
+let singleQuoteLiteral =
+    singleQuote >>. manyCharsTill jchar singleQuote
+    <?> "single quoted string"
+    |>> fun literal -> Literal(literal)
 
-let quotedString =
-    trippleQuotedString <|> singleQuotedString .>> eof
+let doubleQuoteLiteral =
+    quote >>. manyCharsTill jchar quote
+    <?> "quoted string"
+    |>> fun literal -> Literal(literal)
+
+let trippleQuoteLiteral =
+    let singleQuote =
+        pchar '"'// .>> notFollowedByString "\"\""
+
+    let trippleQuotes = pstring "\"\"\"" <?> "quote"
+    let jchar = choice [
+        newline
+        singleQuote
+        unescapedChar
+        escapedChar
+        unicodeChar
+    ]
+
+    trippleQuotes >>. manyCharsTill jchar trippleQuotes
+    <?> "triple quoted string"
+    |>> fun literal -> Literal(literal)
+
+let integer =
+    many1Satisfy isDigit
+    <?> "integer"
+    |>> fun value ->
+        match Int32.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with
+        | true, value -> Literal(value)
+        | _ -> SimpleValue value
+
+let decimal =
+    many1Satisfy (fun c -> isDigit c || c = '.')
+    <?> "integer"
+    |>> fun value ->
+        match Decimal.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with
+        | true, value -> Literal(value)
+        | _ -> 
+            match Double.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with 
+            | true, value -> Literal(value)
+            | _ -> SimpleValue(value)
+
+let number =
+    choice [
+        attempt integer
+        attempt decimal
+    ]
+    <?> "number"
+    <!> "number"
+ 
+let literal =
+    choice [
+        trippleQuoteLiteral
+        doubleQuoteLiteral
+        singleQuoteLiteral
+    ]
+    <?> "literal"
+    <!> "literal"
+
+let expression, expressionImpl = createParserForwardedToRef()
 
 let record =
     let leftBracket = pchar '{'
     let rightBracket = pchar '}'
 
-    let recordLiteralEntry =
+    let recordEntry =
         let sep = (spaces >>. pchar '=' .>> spaces)
-        let key = manyCharsTill asciiLetter sep
-        let value = quote >>. manyCharsTill jchar quote .>> (optional (skipAnyOf [';'; '\n'; ' ']) >>. spaces ) |>> sprintf "\"%s\""
+        let key = identifier .>> sep
 
-        key .>>. value
+        key .>>. expression
 
-    let recordEntry = choice [
-        recordLiteralEntry
-    ]
+    let newlineOrSemiColon =
+        manySatisfy (function '\r'|'\n'|';'|' ' -> true | _ -> false)
 
-    
-    leftBracket >>. spaces >>. many recordEntry .>> rightBracket
+    between leftBracket rightBracket (many (spaces >>. recordEntry .>> newlineOrSemiColon))
+    <?> "record"
+    <!> "record"
+    |>> (Map.ofList >> TemplateValue.Record)
+
+let expressionBetweenParens =
+    between (pchar '(') (pchar ')') expression
+    <?> "expression between parens"
+    <!> "expression between parens"
+
+let variable =
+    identifier <?> "variable"
+    <!> "variable"
+    |>> fun name -> SimpleValue(name)
+
+let argumentExpressions = choice [
+    attempt number
+    attempt record
+    attempt expressionBetweenParens
+    attempt literal
+
+    attempt variable
+]
+
+let parseFunction =
+    let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
+        sepBy1 expression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
+        <!> "comma separated expression"
+        |>> fun x -> x
+
+    let spaceSeparatedExpressions: Parser<TemplateValue list, unit> =
+        sepEndBy1 argumentExpressions spaces <?> "space separated expression"
+        <!> "space separated expression"
+        |>> fun x -> x
+
+    let emptyArguments =
+        skipString "()" <?> "empty arguments"
+        <!> "empty arguments"
+        |>> fun _ -> []
+    let parensArguments =
+        skipChar '(' >>. spaces >>. commaSeparatedExpressions .>> spaces .>> skipChar ')' <?> "argument list"
+        <!> "argument list"
+        |>> fun expr -> expr
+    let curriedArguments =
+        spaces >>. spaceSeparatedExpressions .>> spaces <?> "curried arguments"
+        <!> "curried arguments"
+
+    let arguments =
+        choice [
+            attempt emptyArguments
+            attempt parensArguments
+            attempt curriedArguments
+        ] <!> "arguments"
+        
+    (spaces >>. identifier) .>>. (spaces >>. arguments)
+    <?> "function call"
+    <!> "function call"
+    |>> (fun (id, pars) -> Function(id, pars))
+
+expressionImpl.Value <-
+    choice [
+        attempt record
+        attempt expressionBetweenParens
+        attempt literal
+        attempt number
+        attempt parseFunction
+
+        attempt variable
+    ] <!> "expression"
 
 let parseTemplateValue text =
-    
-    let pipedFn parseFn t =
-        match "(.+)\|\>(.+)" ==> t with
-        | TwoPartsMatch(parts, fnName) ->
-            let f,p = fnName |> splitByCurrying parseFn
-            Function(f, p @ [parts |> parseFn]) |> Some
-        | _ -> None
-    
-    let bracketFn parseFn t =
-        match """(.+?)\(((?:.|\r|\n)*)\)""" ==> t with
-        | TwoPartsMatch(fnName, parts) ->
-            let parts = parts |> splitToFunctionParams |> List.map parseFn
-            Function(fnName, parts) |> Some
-        | _ -> None
-    
-    let plainFn parseFn t =
-        match """(.+?)\s+(.*)""" ==> (t |> clean) with
-        | TwoPartsMatch(fnName, parts) ->
-            let parts = parts |> split ' ' |> List.map parseFn
-            Function(fnName, parts) |> Some
-        | _ -> None
-    
-    let literalSQFn parseFn t = 
-        match """^'([^']+)'$""" ==> (t |> clean) with
-        | OnePartMatch(constant) -> Literal(constant) |> Some
-        | _ -> None
-    
-    let literalDQFn parseFn t = 
-        match """^"([^"]+)"$""" ==> (t |> clean) with
-        | OnePartMatch(constant) -> Literal(constant) |> Some
-        | _ -> None
-
-    let literalTQFn parseFn t = 
+    let rec newParse t =
         t
         |> clean
-        |> run quotedString
-        |> function
-        | ParserResult.Failure (err, _, _) -> None
-        | ParserResult.Success (constant, _, _) -> Literal(constant) |> Some
-
-    let record (parseFn: string -> TemplateValue) t =
-        t
-        |> clean
-        |> run record
+        |> run (expression .>>? spaces .>> eof)
         |> function
         | ParserResult.Failure (err, _, _) ->
             None
-        | ParserResult.Success (recordEntries, _, _) ->
-            recordEntries
-            |> List.map(fun (key, value) ->
-                (key, parseFn <| value)
-            )
-            |> Map.ofList
-            |> Record
-            |> Some
-    
-    let parseFns = [record;literalSQFn;literalDQFn;literalTQFn;pipedFn;bracketFn;plainFn;]
-
-    let rec newParse t =
-        let foldFn (acc:TemplateValue option) item =
-            if acc.IsSome then acc
-            else t |> item
-
-        let chainResult =
-            parseFns 
-            |> List.map (fun x -> x newParse)
-            |> List.fold foldFn None
-        
-        match chainResult with
+        | ParserResult.Success (expression, _, _) ->
+            Some expression
+        |> function 
         | Some v -> v
-        | None -> t |> numberOrSimple
+        | None -> t |> SimpleValue
 
     newParse text
 

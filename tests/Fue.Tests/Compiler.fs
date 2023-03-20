@@ -460,8 +460,7 @@ let ``Supports multi line strings``() =
 second"}}}"""
     init 
     |> fromTextSafe html
-    |> should equal "first
-second"
+    |> should equal "first\nsecond"
 
 
 [<Test>]
