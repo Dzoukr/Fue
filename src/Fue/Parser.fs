@@ -223,6 +223,8 @@ opp.AddOperator(
                 Function(fnName, [ left ])
             | Function (fn, args) ->
                 Function(fn, args @ [ left ])
+            | Literal _
+            | Record _ -> failwith "Can't pipe into literal or record"
     )
 )
     
