@@ -82,7 +82,34 @@ let compiledHtml =
 // compiledHtml now contains "<div>Hello Roman and Jiri</div>"
 ```
 
-**Please note:** For better work with HTML templates, literals syntax can be marked with both 'single quotes' or "double quotes"
+You can also pass records to functions.
+
+```fsharp
+let html = """<div>{{{printHello({ name = "Roman" })}}}</div>"""
+let compiledHtml =
+    init
+    |> add "printHello" (fun name1 name2 -> sprintf "Hello %s and %s" name1 name2)
+    |> add "myValue" "Jiri"
+    |> fromText html
+// compiledHtml now contains "<div>Hello Roman and Jiri</div>"
+```
+
+**Please note:** For better work with HTML templates, literals syntax can be marked with both 'single quotes' or "double quotes" and """tripple quotes""" if you need multiline text
+
+Record values can contain any other value including records.
+
+```fsharp
+{
+    a: "bar" // literal as value
+    b: abc   // variable as value
+    c: abc() // function call
+    d: "abc" |> abc // pipes
+    c: {     // nested record
+       a: "bar" 
+       ....
+    }
+}
+```
 
 
 
@@ -276,6 +303,11 @@ Simple HTML snippet to show what can be achieved using Fue:
 {{{value}}} - Static value
 {{{function()}}} - Function value
 {{{value1 |> fun1}}}
+{{{ { key = value; key2 = value2 } }}}
+{{{ {
+    key = value
+    key2 = value2
+} }}}
 
 <!--For-cycle-->
 <li fs-for="item in items">
