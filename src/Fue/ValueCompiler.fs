@@ -89,17 +89,6 @@ let compile data value =
                 compiledRecord
                 |> box
                 |> Success
-                //|> Map.fold(fun (errors) _ value ->
-                //    match value with
-                //    | Success _ -> errors
-                //    | Failure f ->  f @ errors
-                //) (List.empty)
-                //|> function
-                //| [] -> 
-                //    compiledRecord
-                //    |> box
-                //    |> success
-                //| errors -> Failure errors
                     
         comp value
     )
