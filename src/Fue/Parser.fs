@@ -62,64 +62,43 @@ let unicodeChar =
 
     // set up the main parser
     backslash  >>. uChar >>. hexdigit .>>. hexdigit .>>. hexdigit .>>. hexdigit
-    |>> convertToChar 
-
-    
-
-let (<!>) (p: Parser<_,_>) label : Parser<_,_> =
-    fun stream ->
-        printfn "%A: Entering %s" stream.Position label
-        let reply = p stream
-        
-        match reply.Status with
-        | ReplyStatus.Ok ->
-            printfn "%A: Leaving %s (%A)" stream.Position label reply.Status
-        | ReplyStatus.Error ->
-            printfn "%A: Leaving %s (%A)" stream.Position label reply.Status
-            printfn "%A" (ErrorMessageList.ToSortedArray reply.Error |> Array.map (fun x -> x.ToString()))
-        | ReplyStatus.FatalError ->
-            printfn "%A: Leaving %s (%A)" stream.Position label reply.Status
-            printfn "%A" (ErrorMessageList.ToSortedArray reply.Error)
-
-        reply
+    |>> convertToChar
 
 /// Parse an unescaped char
 let unescapedChar = 
-    satisfyL (fun ch -> ch <> '\\' && ch <> '\"') "char"
+    satisfyL (fun ch -> ch <> '\\' && ch <> '\"') "unescaped char"
+
+let allowedChar = unescapedChar <|> escapedChar <|> unicodeChar <?> "char"
 
 let singleQuote = pchar ''' <?> "quote"
 let quote = pchar '"' <?> "quote"
 
-let jchar = unescapedChar <|> escapedChar <|> unicodeChar
-
-let identifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c || c = '.') <?> "identifier"
-
-let singleQuoteLiteral =
-    singleQuote >>. manyCharsTill jchar singleQuote
+let singleQuotedString =
+    singleQuote >>. manyCharsTill allowedChar singleQuote
     <?> "single quoted string"
     |>> fun literal -> Literal(literal)
 
-let doubleQuoteLiteral =
-    quote >>. manyCharsTill jchar quote
-    <?> "quoted string"
+let doubleQuotedString =
+    quote >>. manyCharsTill allowedChar quote
+    <?> "double quoted string"
     |>> fun literal -> Literal(literal)
 
-let trippleQuoteLiteral =
-    let singleQuote =
-        pchar '"'// .>> notFollowedByString "\"\""
-
+let trippleQuotedString =
     let trippleQuotes = pstring "\"\"\"" <?> "quote"
-    let jchar = choice [
+
+    // Also allow newline and normal quotes in multiline strings
+    let allowedChar = choice [
         newline
+        quote
         singleQuote
         unescapedChar
         escapedChar
         unicodeChar
     ]
 
-    trippleQuotes >>. manyCharsTill jchar trippleQuotes
+    trippleQuotes >>. manyCharsTill allowedChar trippleQuotes
     <?> "triple quoted string"
-    |>> fun literal -> Literal(literal)
+    |>> fun literal -> Literal literal
 
 let integer =
     many1Satisfy isDigit
@@ -146,21 +125,23 @@ let number =
         attempt decimal
     ]
     <?> "number"
-    <!> "number"
  
 let literal =
     choice [
-        trippleQuoteLiteral
-        doubleQuoteLiteral
-        singleQuoteLiteral
+        number
+        trippleQuotedString
+        doubleQuotedString
+        singleQuotedString
     ]
     <?> "literal"
-    <!> "literal"
+
+
+let identifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c || c = '.') <?> "identifier"
 
 let expression, expressionImpl = createParserForwardedToRef()
 
 let opp = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
-let pipeExpression = opp.ExpressionParser <?> "pipe expression parser" <!> "pipe"
+let pipeExpression = opp.ExpressionParser <?> "pipe expression parser"
 
 let record =
     let leftBracket = pchar '{'
@@ -177,21 +158,17 @@ let record =
 
     between leftBracket rightBracket (many (spaces >>. recordEntry .>> newlineOrSemiColon))
     <?> "record"
-    <!> "record"
     |>> (Map.ofList >> TemplateValue.Record)
 
 let expressionBetweenParens =
     between (pchar '(') (pchar ')') pipeExpression
     <?> "expression between parens"
-    <!> "expression between parens"
 
 let variable =
     identifier <?> "variable"
-    <!> "variable"
     |>> fun name -> SimpleValue(name)
 
 let argumentExpressions = choice [
-    attempt number
     attempt record
     attempt expressionBetweenParens
     attempt literal
@@ -223,36 +200,30 @@ let parseFunction =
 
     let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
         sepBy1 pipeExpression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
-        <!> "comma separated expression"
         |>> fun x -> x
 
     let spaceSeparatedExpressions: Parser<TemplateValue list, unit> =
         sepEndBy1 argumentExpressions spaceOrTab <?> "space separated expression"
-        <!> "space separated expression"
         |>> fun x -> x
 
     let emptyArguments =
         spaceOrTab >>. skipString "()" <?> "empty arguments"
-        <!> "empty arguments"
         |>> fun _ -> []
     let parensArguments =
         spaceOrTab >>. skipChar '(' >>. spaces >>. commaSeparatedExpressions .>> spaces .>> skipChar ')' <?> "argument list"
-        <!> "argument list"
         |>> fun expr -> expr
     let curriedArguments =
         spaceOrTab >>. spaceSeparatedExpressions .>> spaces <?> "curried arguments"
-        <!> "curried arguments"
 
     let arguments =
         choice [
             attempt emptyArguments
             attempt parensArguments
             attempt curriedArguments
-        ] <!> "arguments"
+        ]
         
     (spaces >>. identifier) .>>. (arguments)
     <?> "function call"
-    <!> "function call"
     |>> (fun (id, pars) -> Function(id, pars))
 
 expressionImpl.Value <-
@@ -260,11 +231,10 @@ expressionImpl.Value <-
         attempt record
         attempt expressionBetweenParens
         attempt literal
-        attempt number
         attempt parseFunction
 
         attempt variable
-    ] <!> "expression"
+    ]
 
 let parseTemplateValue text =
     let rec newParse t =

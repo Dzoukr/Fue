@@ -182,6 +182,12 @@ let ``Parses function value`` () =
     |> should equal (TemplateValue.Function("value", []))
 
 [<Test>]
+let ``Tipple quoted string allows single and double quotes`` () = 
+    " \"\"\"Tripple quotes strings should allow single quotes (\') and double quotes (\").\"\"\" " 
+    |> parseTemplateValue 
+    |> should equal (TemplateValue.Literal("Tripple quotes strings should allow single quotes (\') and double quotes (\")."))
+
+[<Test>]
 let ``Parses function value (with param)`` () = 
     "value param" 
     |> parseTemplateValue 
