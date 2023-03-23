@@ -137,9 +137,6 @@ let literal =
 
 
 let identifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c || c = '.') <?> "identifier"
-
-let expression, expressionImpl = createParserForwardedToRef()
-
 let opp = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
 let pipeExpression = opp.ExpressionParser <?> "pipe expression parser"
 
@@ -174,7 +171,52 @@ let argumentExpressions = choice [
     attempt literal
 
     attempt variable
-]
+]  
+
+let parseFunction =
+    // don't allow newline (after function call and arguments)
+    let spaceOrTab = optional <| satisfy (fun c -> c = ' ' || c = '\t')
+
+    let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
+        sepBy1 pipeExpression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
+        |>> fun x -> x
+
+    let spaceSeparatedExpressions: Parser<TemplateValue list, unit> =
+        sepEndBy1 argumentExpressions spaceOrTab <?> "space separated expression"
+        |>> fun x -> x
+
+    let emptyArguments =
+        spaceOrTab >>. skipString "()" <?> "empty arguments"
+        |>> fun _ -> []
+    let parenthesizedArguments =
+        spaceOrTab >>. skipChar '(' >>. spaces >>. commaSeparatedExpressions .>> spaces .>> skipChar ')' <?> "argument list"
+        <?> "parenthesized arguments"
+        |>> fun expr -> expr
+    let curriedArguments =
+        spaceOrTab >>. spaceSeparatedExpressions .>> spaces <?> "curried arguments"
+
+    let arguments =
+        choice [
+            attempt emptyArguments
+            attempt parenthesizedArguments
+            attempt curriedArguments
+        ]
+        <?> "arguments"
+        
+    (spaces >>. identifier) .>>. (arguments)
+    <?> "function call"
+    |>> (fun (id, pars) -> Function(id, pars))
+
+let expression =
+    choice [
+        attempt record
+        attempt expressionBetweenParens
+        attempt literal
+        attempt parseFunction
+
+        attempt variable
+    ]
+    <?> "expression"
 
 opp.TermParser <- attempt expression .>> spaces
 opp.AddOperator(
@@ -193,48 +235,6 @@ opp.AddOperator(
             | Record _ -> failwith "Can't pipe into literal or record"
     )
 )
-    
-
-let parseFunction =
-    let spaceOrTab = optional <| satisfy (fun c -> c = ' ' || c = '\t')
-
-    let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
-        sepBy1 pipeExpression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
-        |>> fun x -> x
-
-    let spaceSeparatedExpressions: Parser<TemplateValue list, unit> =
-        sepEndBy1 argumentExpressions spaceOrTab <?> "space separated expression"
-        |>> fun x -> x
-
-    let emptyArguments =
-        spaceOrTab >>. skipString "()" <?> "empty arguments"
-        |>> fun _ -> []
-    let parensArguments =
-        spaceOrTab >>. skipChar '(' >>. spaces >>. commaSeparatedExpressions .>> spaces .>> skipChar ')' <?> "argument list"
-        |>> fun expr -> expr
-    let curriedArguments =
-        spaceOrTab >>. spaceSeparatedExpressions .>> spaces <?> "curried arguments"
-
-    let arguments =
-        choice [
-            attempt emptyArguments
-            attempt parensArguments
-            attempt curriedArguments
-        ]
-        
-    (spaces >>. identifier) .>>. (arguments)
-    <?> "function call"
-    |>> (fun (id, pars) -> Function(id, pars))
-
-expressionImpl.Value <-
-    choice [
-        attempt record
-        attempt expressionBetweenParens
-        attempt literal
-        attempt parseFunction
-
-        attempt variable
-    ]
 
 let parseTemplateValue text =
     let rec newParse t =
