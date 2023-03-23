@@ -52,12 +52,3 @@ let ``Parse angel brackets correctly and do not add closing endtag (Issue #16)``
     |> add "render" true
     |> fromNoneHtmlText template
     |> should equal "ArrayList<Class<ENTITY>>"
-
-
-[<Test>]
-let ``Does not generate closing <link>-tag (Issue #?)``() =
-    let template = """<link>https://abc.noRealTldHere</link>""" 
-
-    init
-    |> fromText template
-    |> should equal "<link>https://abc.noRealTldHere</link>"

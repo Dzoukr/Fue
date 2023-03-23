@@ -138,7 +138,7 @@ let literal =
 
 let identifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c || c = '.') <?> "identifier"
 let opp = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
-let pipeExpression = opp.ExpressionParser <?> "pipe expression parser"
+let pipeExpression = opp.ExpressionParser <?> "expression"
 
 let record =
     let leftBracket = pchar '{'
