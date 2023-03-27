@@ -452,3 +452,65 @@ let ``Supports fromTextSafe function``() =
     |> add "myValue" "<i>Hello</i>"
     |> fromTextSafe html
     |> should equal "&lt;i&gt;Hello&lt;/i&gt;"
+
+
+[<Test>]
+let ``Supports multi line strings``() =
+    let html = """{{{"first
+second"}}}"""
+    init 
+    |> fromTextSafe html
+    |> should equal "first\nsecond"
+
+
+[<Test>]
+let ``Supports triple quoted strings``() =
+    let html = "{{{\"\"\"first
+second\"\"\"}}}"
+    init 
+    |> fromTextSafe html
+    |> should equal "first\nsecond"
+
+[<Test>]
+let ``Supports triple quoted strings (in function calls)``() =
+    let html = "{{{test(\"\"\"first
+second\"\"\")}}}"
+    init 
+    |> add "test" (fun content -> content)
+    |> fromTextSafe html
+    |> should equal "first\nsecond"
+
+
+[<Test>]
+let ``Supports triple quoted strings (in function calls with chars)``() =
+    let html = "{{{test(\"123\", \"\"\"first\"
+second\"\"\")}}}"
+    init 
+    |> add "test" (fun x content -> content)
+    |> fromText html
+    |> should equal "first\"\nsecond"
+
+[<Test>]
+let ``Supports passing records to functions``() =
+    let html = "{{{test( {
+    number = \"123\"
+    textContent = \"first<\"
+})}}}"
+    init 
+    |> add "test" (fun map -> sprintf "%A" map)
+    |> fromText html
+    |> should equal "map [(\"number\", \"123\"); (\"textContent\", \"first<\")]"
+
+[<Test>]
+let ``Supports passing records to functions (with nested record)``() =
+    let result = Map [("number", box "123"); ("nestedContent", box <| Map [("foo", "bar")])]
+    let html = "{{{test( {
+    number = \"123\"
+    nestedContent = {
+        foo = \"bar\"
+    }
+})}}}"
+    init 
+    |> add "test" (fun map -> sprintf "%A" map)
+    |> fromText html
+    |> should equal """map [("nestedContent", map [("foo", "bar")]); ("number", "123")]"""

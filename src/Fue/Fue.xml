@@ -2,6 +2,21 @@
 <doc>
 <assembly><name>Fue</name></assembly>
 <members>
+<member name="P:Fue.Parser.unescapedChar">
+<summary>
+ Parse an unescaped char
+</summary>
+</member>
+<member name="P:Fue.Parser.unicodeChar">
+<summary>
+ Parse a unicode char
+</summary>
+</member>
+<member name="P:Fue.Parser.escapedChar">
+<summary>
+ Parse an escaped char
+</summary>
+</member>
 <member name="M:Fue.ValueCompiler.compile(Microsoft.FSharp.Collections.FSharpMap{System.String,System.Object},Fue.Core.TemplateValue)">
 <summary>
  Compiles template value into obj

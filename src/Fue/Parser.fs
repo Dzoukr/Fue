@@ -6,6 +6,7 @@ open StringUtils
 open System.Text.RegularExpressions
 open HtmlAgilityPack
 open Extensions
+open FParsec
 
 let forAttr = "fs-for"
 let ifAttr = "fs-if"
@@ -14,15 +15,9 @@ let unionSourceAttr = "fs-du"
 let unionCaseAttr = "fs-case"
 
 let private (==>) regex value =
-    let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
-    regex.Match(value).Groups
-
-let private splitByCurrying parseFn t = 
-    
-    let regex = new Regex(""""[^"]+"?|'[^']+'?|[^'"\s]+""", RegexOptions.IgnoreCase ||| RegexOptions.Singleline)
-    let matches = [ for m in regex.Matches(t) do yield m.Groups.[0].Value ]
-    let f,s = (matches |> List.head |> clean),(matches |> List.tail |> List.map clean)
-    f, (s |> List.map parseFn)
+    let regex = new Regex(regex, RegexOptions.IgnoreCase ||| RegexOptions.Multiline)
+    let m = regex.Match(value)
+    m.Groups
 
 let private (|TwoPartsMatch|_|) (groups:GroupCollection) =
     match groups.Count with
@@ -32,70 +27,228 @@ let private (|TwoPartsMatch|_|) (groups:GroupCollection) =
         (fnName, parts) |> Some
     | _ -> None
 
-let private (|OnePartMatch|_|) (groups:GroupCollection) =
-    match groups.Count with
-    | 2 -> groups.[1].Value |> clean |> Some
-    | _ -> None
+/// Parse an escaped char
+let escapedChar = 
+    [ 
+    // (stringToMatch, resultChar)
+    ("\\\"",'\"')      // quote
+    ("\\\\",'\\')      // reverse solidus 
+    ("\\/",'/')        // solidus
+    ("\\b",'\b')       // backspace
+    ("\\f",'\f')       // formfeed
+    ("\\n",'\n')       // newline
+    ("\\r",'\r')       // cr
+    ("\\t",'\t')       // tab
+    ] 
+    // convert each pair into a parser
+    |> List.map (fun (toMatch,result) -> 
+        pstring toMatch >>% result)
+    // and combine them into one
+    |> choice
 
-let private numberOrSimple value =
-    match Int32.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with
-    | true, value -> Literal(value)
-    | _ ->
-        match Decimal.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with 
+/// Parse a unicode char
+let unicodeChar = 
+
+    // set up the "primitive" parsers        
+    let backslash = pchar '\\'
+    let uChar = pchar 'u'
+    let hexdigit = anyOf (['0'..'9'] @ ['A'..'F'] @ ['a'..'f'])
+
+    // convert the parser output (nested tuples)
+    // to a char
+    let convertToChar (((h1,h2),h3),h4) = 
+        let str = sprintf "%c%c%c%c" h1 h2 h3 h4
+        Int32.Parse(str,Globalization.NumberStyles.HexNumber) |> char
+
+    // set up the main parser
+    backslash  >>. uChar >>. hexdigit .>>. hexdigit .>>. hexdigit .>>. hexdigit
+    |>> convertToChar
+
+/// Parse an unescaped char
+let unescapedChar = 
+    satisfyL (fun ch -> ch <> '\\' && ch <> '\"') "unescaped char"
+
+let allowedChar = unescapedChar <|> escapedChar <|> unicodeChar <?> "char"
+
+let singleQuote = pchar ''' <?> "quote"
+let quote = pchar '"' <?> "quote"
+
+let singleQuotedString =
+    singleQuote >>. manyCharsTill allowedChar singleQuote
+    <?> "single quoted string"
+    |>> fun literal -> Literal(literal)
+
+let doubleQuotedString =
+    quote >>. manyCharsTill allowedChar quote
+    <?> "double quoted string"
+    |>> fun literal -> Literal(literal)
+
+let trippleQuotedString =
+    let trippleQuotes = pstring "\"\"\"" <?> "quote"
+
+    // Also allow newline and normal quotes in multiline strings
+    let allowedChar = choice [
+        newline
+        quote
+        singleQuote
+        unescapedChar
+        escapedChar
+        unicodeChar
+    ]
+
+    trippleQuotes >>. manyCharsTill allowedChar trippleQuotes
+    <?> "triple quoted string"
+    |>> fun literal -> Literal literal
+
+let integer =
+    many1Satisfy isDigit
+    <?> "integer"
+    |>> fun value ->
+        match Int32.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with
         | true, value -> Literal(value)
-        | _ ->
+        | _ -> SimpleValue value
+
+let decimal =
+    many1Satisfy (fun c -> isDigit c || c = '.')
+    <?> "integer"
+    |>> fun value ->
+        match Decimal.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with
+        | true, value -> Literal(value)
+        | _ -> 
             match Double.TryParse(value, Globalization.NumberStyles.Any, Globalization.NumberFormatInfo.InvariantInfo) with 
             | true, value -> Literal(value)
             | _ -> SimpleValue(value)
 
-let parseTemplateValue text =
-    
-    let pipedFn parseFn t =
-        match "(.+)\|\>(.+)" ==> t with
-        | TwoPartsMatch(parts, fnName) ->
-            let f,p = fnName |> splitByCurrying parseFn
-            Function(f, p @ [parts |> parseFn]) |> Some
-        | _ -> None
-    
-    let bracketFn parseFn t =
-        match """(.+?)\((.*)\)""" ==> t with
-        | TwoPartsMatch(fnName, parts) ->
-            let parts = parts |> splitToFunctionParams |> List.map parseFn
-            Function(fnName, parts) |> Some
-        | _ -> None
-    
-    let plainFn parseFn t =
-        match """(.+?)\s+(.*)""" ==> (t |> clean) with
-        | TwoPartsMatch(fnName, parts) ->
-            let parts = parts |> split ' ' |> List.map parseFn
-            Function(fnName, parts) |> Some
-        | _ -> None
-    
-    let literalSQFn parseFn t = 
-        match """^'([^']+)'$""" ==> (t |> clean) with
-        | OnePartMatch(constant) -> Literal(constant) |> Some
-        | _ -> None
-    
-    let literalDQFn parseFn t = 
-        match """^"([^"]+)"$""" ==> (t |> clean) with
-        | OnePartMatch(constant) -> Literal(constant) |> Some
-        | _ -> None
-    
-    let parseFns = [literalSQFn;literalDQFn;pipedFn;bracketFn;plainFn;]
+let number =
+    choice [
+        attempt integer
+        attempt decimal
+    ]
+    <?> "number"
+ 
+let literal =
+    choice [
+        number
+        trippleQuotedString
+        doubleQuotedString
+        singleQuotedString
+    ]
+    <?> "literal"
 
-    let rec newParse t =
-        let foldFn (acc:TemplateValue option) item =
-            if acc.IsSome then acc
-            else t |> item
 
-        let chainResult =
-            parseFns 
-            |> List.map (fun x -> x newParse)
-            |> List.fold foldFn None
+let identifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c || c = '.') <?> "identifier"
+let opp = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
+let pipeExpression = opp.ExpressionParser <?> "expression"
+
+let record =
+    let leftBracket = pchar '{'
+    let rightBracket = pchar '}'
+
+    let recordEntry =
+        let sep = (spaces >>. pchar '=' .>> spaces)
+        let key = identifier .>> sep
+
+        key .>>. pipeExpression
+
+    let newlineOrSemiColon =
+        manySatisfy (function '\r'|'\n'|';'|' ' -> true | _ -> false)
+
+    between leftBracket rightBracket (many (spaces >>. recordEntry .>> newlineOrSemiColon))
+    <?> "record"
+    |>> (Map.ofList >> TemplateValue.Record)
+
+let expressionBetweenParens =
+    between (pchar '(') (pchar ')') pipeExpression
+    <?> "expression between parens"
+
+let variable =
+    identifier <?> "variable"
+    |>> fun name -> SimpleValue(name)
+
+let argumentExpressions = choice [
+    attempt record
+    attempt expressionBetweenParens
+    attempt literal
+
+    attempt variable
+]  
+
+let parseFunction =
+    // don't allow newline (after function call and arguments)
+    let spaceOrTab = optional <| satisfy (fun c -> c = ' ' || c = '\t')
+
+    let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
+        sepBy1 pipeExpression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
+        |>> fun x -> x
+
+    let spaceSeparatedExpressions: Parser<TemplateValue list, unit> =
+        sepEndBy1 argumentExpressions spaceOrTab <?> "space separated expression"
+        |>> fun x -> x
+
+    let emptyArguments =
+        spaceOrTab >>. skipString "()" <?> "empty arguments"
+        |>> fun _ -> []
+    let parenthesizedArguments =
+        spaceOrTab >>. skipChar '(' >>. spaces >>. commaSeparatedExpressions .>> spaces .>> skipChar ')' <?> "argument list"
+        <?> "parenthesized arguments"
+        |>> fun expr -> expr
+    let curriedArguments =
+        spaceOrTab >>. spaceSeparatedExpressions .>> spaces <?> "curried arguments"
+
+    let arguments =
+        choice [
+            attempt emptyArguments
+            attempt parenthesizedArguments
+            attempt curriedArguments
+        ]
+        <?> "arguments"
         
-        match chainResult with
+    (spaces >>. identifier) .>>. (arguments)
+    <?> "function call"
+    |>> (fun (id, pars) -> Function(id, pars))
+
+let expression =
+    choice [
+        attempt record
+        attempt expressionBetweenParens
+        attempt literal
+        attempt parseFunction
+
+        attempt variable
+    ]
+    <?> "expression"
+
+opp.TermParser <- attempt expression .>> spaces
+opp.AddOperator(
+    InfixOperator(
+        "|>",
+        spaces,
+        1,
+        Associativity.Left,
+        fun left right ->
+            match right with
+            | SimpleValue fnName ->
+                Function(fnName, [ left ])
+            | Function (fn, args) ->
+                Function(fn, args @ [ left ])
+            | Literal _
+            | Record _ -> failwith "Can't pipe into literal or record"
+    )
+)
+
+let parseTemplateValue text =
+    let rec newParse t =
+        t
+        |> clean
+        |> run (pipeExpression .>>? spaces .>> eof)
+        |> function
+        | ParserResult.Failure (err, _, _) ->
+            None
+        | ParserResult.Success (expression, _, _) ->
+            Some expression
+        |> function 
         | Some v -> v
-        | None -> t |> numberOrSimple
+        | None -> t |> SimpleValue
 
     newParse text
 
@@ -129,7 +282,7 @@ let parseNode (node:HtmlNode) =
     | _ -> None
 
 let parseTextInterpolations text = 
-    let regex = new Regex("{{{(.*?)}}}", RegexOptions.IgnoreCase)
+    let regex = new Regex("{{{((.|\r|\n)*?)}}}", RegexOptions.IgnoreCase)
     [for m in regex.Matches(text) do yield m.Groups] 
     |> List.map (fun g -> g.[0].Value, (g.[1].Value |> clean))
     |> List.filter (fun x -> snd x <> "")
