@@ -7,5 +7,15 @@ nuget HtmlAgilityPack
 nuget NUnit
 nuget NUnit3TestAdapter
 nuget Microsoft.NET.Test.Sdk
-nuget Nuget.CommandLine
 nuget FsUnit
+
+group Build
+    source https://api.nuget.org/v3/index.json
+    framework: net7.0
+    storage: none
+
+    nuget FSharp.Core
+    nuget Fake.Core.Target
+    nuget Fake.DotNet.Cli
+    nuget Fake.IO.FileSystem
+    nuget Nuget.CommandLine

@@ -1,3 +1,6 @@
+### 2.0.0 - March 27 2023
+* New major version based on FsParsec
+
 ### 1.8.0 - August 12 2021
 * Compiles without generating closing tags #17
 

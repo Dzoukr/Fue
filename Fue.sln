@@ -4,6 +4,10 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fue", "src\Fue\Fue.fsproj",
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fue.Tests", "tests\Fue.Tests\Fue.Tests.fsproj", "{6026126F-4CE1-4675-9653-FE1274CFF24C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{5FAA7633-05C3-48D6-B93B-D07626BE1AFD}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Build", "Build.fsproj", "{EDDF9EF2-2BAF-4293-BE3A-0A2B9F440FAB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,12 @@ Global
 		{6026126F-4CE1-4675-9653-FE1274CFF24C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6026126F-4CE1-4675-9653-FE1274CFF24C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6026126F-4CE1-4675-9653-FE1274CFF24C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDDF9EF2-2BAF-4293-BE3A-0A2B9F440FAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDDF9EF2-2BAF-4293-BE3A-0A2B9F440FAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDDF9EF2-2BAF-4293-BE3A-0A2B9F440FAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDDF9EF2-2BAF-4293-BE3A-0A2B9F440FAB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EDDF9EF2-2BAF-4293-BE3A-0A2B9F440FAB} = {5FAA7633-05C3-48D6-B93B-D07626BE1AFD}
 	EndGlobalSection
 EndGlobal

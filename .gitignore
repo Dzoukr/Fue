@@ -24,3 +24,4 @@ node_modules
 build/app
 build/tests
 nuget/output/*
+/.idea
