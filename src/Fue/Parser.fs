@@ -137,8 +137,8 @@ let literal =
 
 
 let identifier = many1Satisfy2 isLetter (fun c -> isLetter c || isDigit c || c = '.') <?> "identifier"
-let opp = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
-let pipeExpression = opp.ExpressionParser <?> "expression"
+let operatorParser = new OperatorPrecedenceParser<TemplateValue,unit,unit>()
+let operatorExpression = operatorParser.ExpressionParser <?> "expression"
 
 let record =
     let leftBracket = pchar '{'
@@ -148,7 +148,7 @@ let record =
         let sep = (spaces >>. pchar '=' .>> spaces)
         let key = identifier .>> sep
 
-        key .>>. pipeExpression
+        key .>>. operatorExpression
 
     let newlineOrSemiColon =
         manySatisfy (function '\r'|'\n'|';'|' ' -> true | _ -> false)
@@ -158,7 +158,7 @@ let record =
     |>> (Map.ofList >> TemplateValue.Record)
 
 let expressionBetweenParens =
-    between (pchar '(') (pchar ')') pipeExpression
+    between (pchar '(') (pchar ')') operatorExpression
     <?> "expression between parens"
 
 let variable =
@@ -178,7 +178,7 @@ let parseFunction =
     let spaceOrTab = optional <| satisfy (fun c -> c = ' ' || c = '\t')
 
     let commaSeparatedExpressions: Parser<TemplateValue list, unit> =
-        sepBy1 pipeExpression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
+        sepBy1 operatorExpression (spaces >>. skipChar ',' >>. spaces) <?> "comma separated expression"
         |>> fun x -> x
 
     let spaceSeparatedExpressions: Parser<TemplateValue list, unit> =
@@ -218,8 +218,19 @@ let expression =
     ]
     <?> "expression"
 
-opp.TermParser <- attempt expression .>> spaces
-opp.AddOperator(
+
+operatorParser.TermParser <- attempt expression .>> spaces
+operatorParser.AddOperator(
+    InfixOperator(
+        "??",
+        spaces,
+        1,
+        Associativity.Left,
+        fun left right ->
+            NullCoalesce (left, right)
+    )
+)
+operatorParser.AddOperator(
     InfixOperator(
         "|>",
         spaces,
@@ -231,6 +242,8 @@ opp.AddOperator(
                 Function(fnName, [ left ])
             | Function (fn, args) ->
                 Function(fn, args @ [ left ])
+            | NullCoalesce _ ->
+                failwith "can't pipe into null coalescing operator"
             | Literal _
             | Record _ -> failwith "Can't pipe into literal or record"
     )
@@ -240,7 +253,7 @@ let parseTemplateValue text =
     let rec newParse t =
         t
         |> clean
-        |> run (pipeExpression .>>? spaces .>> eof)
+        |> run (operatorExpression .>>? spaces .>> eof)
         |> function
         | ParserResult.Failure (err, _, _) ->
             None

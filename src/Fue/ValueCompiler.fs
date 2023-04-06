@@ -81,6 +81,11 @@ let compile data value =
                     | Method(ob, mi) -> mi.Invoke(ob, methodParams)
                 )
             | Literal(value) -> value |> success
+            | NullCoalesce (left, right) ->
+                match comp left with
+                | Failure _ -> comp right
+                | Success result -> Success result
+
             | Record(record) ->
                 let compiledRecord =
                     record

@@ -50,6 +50,21 @@ let compiledHtml = init |> add "name" "Roman" |> fromText html
 // compiledHtml now contains "<div>Roman</div>"
 ```
 
+If a variable is not defined, it gets rendered as is - including the braces.
+
+```fsharp
+let html = "<div>{{{name}}}</div>"
+let compiledHtml = init |> fromText html
+// compiledHtml now contains "<div>{{{name}}}</div>"
+```
+
+However, if you want to have a default value in case the variable is not defined, you can do that with `??`:
+```fsharp
+let html = "<div>{{{name ?? "Roman"}}}</div>"
+let compiledHtml = init |> fromText html
+// compiledHtml now contains "<div>Roman</div>"
+```
+
 Wanna use functions? No problem!
 
 ```fsharp
@@ -307,6 +322,7 @@ literal"""}}}
 
 <!--Template basics-->
 {{{value}}} - Static value
+{{{value ?? "default value"}}} - Default Value
 {{{function()}}} - Function value
 {{{value1 |> fun1}}}
 {{{ { key = value; key2 = value2 } }}}

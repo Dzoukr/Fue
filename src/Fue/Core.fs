@@ -5,6 +5,7 @@ type TemplateValue =
     | Function of name:string * parameters:TemplateValue list
     | Literal of value:obj
     | Record of Map<string, TemplateValue>
+    | NullCoalesce of TemplateValue * TemplateValue
 
 type TemplateNode =
     | ForCycle of item:string * source:TemplateValue

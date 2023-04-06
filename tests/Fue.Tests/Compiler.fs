@@ -446,12 +446,51 @@ let ``Supports functions for options without value``() =
     |> should equal "NOPE"
 
 [<Test>]
+let ``Supports default values``() =
+    let html = """{{{myValue ?? "Default Value"}}}"""
+    init 
+    |> fromText html
+    |> should equal "Default Value"
+
+[<Test>]
+let ``Supports functions as default values``() =
+    let html = """{{{myValue ?? defaultFunction()}}}"""
+    init 
+    |> add "defaultFunction" (fun () -> "Default Value")
+    |> fromText html
+    |> should equal "Default Value"
+
+[<Test>]
+let ``Does not use default value if left side is defined``() =
+    let html = """{{{myValue ?? "Default Value"}}}"""
+    init 
+    |> add "myValue" "non-default"
+    |> fromText html
+    |> should equal "non-default"
+
+[<Test>]
+let ``Does not use default value if left side is literal``() =
+    let html = """{{{"non-default" ?? "Default Value"}}}"""
+    init 
+    |> fromText html
+    |> should equal "non-default"
+
+[<Test>]
+let ``Does not use default value if left side is evaluated function``() =
+    let html = """{{{ nonDefaultFunction() ?? "Default Value" }}}"""
+    init 
+    |> add "nonDefaultFunction" (fun () -> "Non-Default Value")
+    |> fromText html
+    |> should equal "Non-Default Value"
+
+[<Test>]
 let ``Supports fromTextSafe function``() =
     let html = """{{{myValue}}}"""
     init 
     |> add "myValue" "<i>Hello</i>"
     |> fromTextSafe html
     |> should equal "&lt;i&gt;Hello&lt;/i&gt;"
+
 
 
 [<Test>]
