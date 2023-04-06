@@ -484,6 +484,14 @@ let ``Does not use default value if left side is evaluated function``() =
     |> should equal "Non-Default Value"
 
 [<Test>]
+let ``Defautl value gets used even if it is null``() =
+    let html = """{{{ fn() ?? "Default Value" }}}"""
+    init 
+    |> add "fn" (fun () -> null)
+    |> fromText html
+    |> should equal ""
+
+[<Test>]
 let ``Supports fromTextSafe function``() =
     let html = """{{{myValue}}}"""
     init 
