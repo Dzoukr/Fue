@@ -52,14 +52,6 @@ module NullCoalesce =
         |> should equal "Non-Default Value"
 
     [<Test>]
-    let ``Default value gets used even if it is null``() =
-        let html = """{{{ fn() ?? "Default Value" }}}"""
-        init 
-        |> add "fn" (fun () -> null)
-        |> fromText html
-        |> should equal ""
-
-    [<Test>]
     let ``Default value as function parameter gets evaluated (left side)``() =
         let html = """{{{ fn(var ?? "Default Value") }}}"""
         init 
@@ -73,6 +65,22 @@ module NullCoalesce =
         let html = """{{{ fn(var ?? "Default Value") }}}"""
         init 
         |> add "fn" (fun var -> var)
+        |> fromText html
+        |> should equal "Default Value"
+
+    [<Test>]
+    let ``Evaluated null value on the left side causes right side to evaluate``() =
+        let html = """{{{ nonDefaultFunction() ?? "Default Value" }}}"""
+        init 
+        |> add "nonDefaultFunction" (fun () -> null)
+        |> fromText html
+        |> should equal "Default Value"
+
+    [<Test>]
+    let ``Null value on the left side causes right side to evaluate``() =
+        let html = """{{{myValue ?? "Default Value"}}}"""
+        init 
+        |> add "myValue" null
         |> fromText html
         |> should equal "Default Value"
 

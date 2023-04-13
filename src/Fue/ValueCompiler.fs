@@ -83,8 +83,9 @@ let compile data value =
             | Literal(value) -> value |> success
             | NullCoalesce (left, right) ->
                 match comp left with
-                | Failure _ -> comp right
-                | Success result -> Success result
+                | Failure _
+                | Success null -> comp right
+                | result -> result
 
             | Record(record) ->
                 let compiledRecord =
