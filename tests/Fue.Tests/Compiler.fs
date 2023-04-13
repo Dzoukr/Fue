@@ -84,6 +84,14 @@ module NullCoalesce =
         |> fromText html
         |> should equal "Default Value"
 
+    [<Test>]
+    let ``Null coalescing operator can be chained``() =
+        let html = """{{{myValue ?? notDefined ?? "Default Value"}}}"""
+        init 
+        |> add "myValue" null
+        |> fromText html
+        |> should equal "Default Value"
+
 [<Test>]
 let ``Compiles the same value twice`` () = 
     let html = "{{{  value   }}}|{{{value}}}"
