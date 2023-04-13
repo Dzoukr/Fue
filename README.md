@@ -58,7 +58,7 @@ let compiledHtml = init |> fromText html
 // compiledHtml now contains "<div>{{{name}}}</div>"
 ```
 
-However, if you want to have a default value in case the variable is not defined, you can do that with `??`:
+However, if you want to have a default value in case the variable is not defined or `null`, you can do that with `??`:
 ```fsharp
 let html = "<div>{{{name ?? "Roman"}}}</div>"
 let compiledHtml = init |> fromText html
