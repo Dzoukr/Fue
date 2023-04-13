@@ -11,6 +11,71 @@ let private getFileContent file =
     Path.Combine([|AppDomain.CurrentDomain.BaseDirectory; file|])
     |> File.ReadAllText
 
+
+module NullCoalesce =
+    [<Test>]
+    let ``Supports default values``() =
+        let html = """{{{myValue ?? "Default Value"}}}"""
+        init 
+        |> fromText html
+        |> should equal "Default Value"
+
+    [<Test>]
+    let ``Supports functions as default values``() =
+        let html = """{{{myValue ?? defaultFunction()}}}"""
+        init 
+        |> add "defaultFunction" (fun () -> "Default Value")
+        |> fromText html
+        |> should equal "Default Value"
+
+    [<Test>]
+    let ``Does not use default value if left side is defined``() =
+        let html = """{{{myValue ?? "Default Value"}}}"""
+        init 
+        |> add "myValue" "non-default"
+        |> fromText html
+        |> should equal "non-default"
+
+    [<Test>]
+    let ``Does not use default value if left side is literal``() =
+        let html = """{{{"non-default" ?? "Default Value"}}}"""
+        init 
+        |> fromText html
+        |> should equal "non-default"
+
+    [<Test>]
+    let ``Does not use default value if left side is evaluated function``() =
+        let html = """{{{ nonDefaultFunction() ?? "Default Value" }}}"""
+        init 
+        |> add "nonDefaultFunction" (fun () -> "Non-Default Value")
+        |> fromText html
+        |> should equal "Non-Default Value"
+
+    [<Test>]
+    let ``Default value gets used even if it is null``() =
+        let html = """{{{ fn() ?? "Default Value" }}}"""
+        init 
+        |> add "fn" (fun () -> null)
+        |> fromText html
+        |> should equal ""
+
+    [<Test>]
+    let ``Default value as function parameter gets evaluated (left side)``() =
+        let html = """{{{ fn(var ?? "Default Value") }}}"""
+        init 
+        |> add "fn" (fun var -> var)
+        |> add "var" "content"
+        |> fromText html
+        |> should equal "content"
+
+    [<Test>]
+    let ``Default value as function parameter gets evaluated (right side)``() =
+        let html = """{{{ fn(var ?? "Default Value") }}}"""
+        init 
+        |> add "fn" (fun var -> var)
+        |> fromText html
+        |> should equal "Default Value"
+
 [<Test>]
 let ``Compiles the same value twice`` () = 
     let html = "{{{  value   }}}|{{{value}}}"
@@ -444,52 +509,6 @@ let ``Supports functions for options without value``() =
     |> add "myFunc" (fun (s:string option) -> if s.IsSome then s.Value else "NOPE")
     |> fromText html
     |> should equal "NOPE"
-
-[<Test>]
-let ``Supports default values``() =
-    let html = """{{{myValue ?? "Default Value"}}}"""
-    init 
-    |> fromText html
-    |> should equal "Default Value"
-
-[<Test>]
-let ``Supports functions as default values``() =
-    let html = """{{{myValue ?? defaultFunction()}}}"""
-    init 
-    |> add "defaultFunction" (fun () -> "Default Value")
-    |> fromText html
-    |> should equal "Default Value"
-
-[<Test>]
-let ``Does not use default value if left side is defined``() =
-    let html = """{{{myValue ?? "Default Value"}}}"""
-    init 
-    |> add "myValue" "non-default"
-    |> fromText html
-    |> should equal "non-default"
-
-[<Test>]
-let ``Does not use default value if left side is literal``() =
-    let html = """{{{"non-default" ?? "Default Value"}}}"""
-    init 
-    |> fromText html
-    |> should equal "non-default"
-
-[<Test>]
-let ``Does not use default value if left side is evaluated function``() =
-    let html = """{{{ nonDefaultFunction() ?? "Default Value" }}}"""
-    init 
-    |> add "nonDefaultFunction" (fun () -> "Non-Default Value")
-    |> fromText html
-    |> should equal "Non-Default Value"
-
-[<Test>]
-let ``Defautl value gets used even if it is null``() =
-    let html = """{{{ fn() ?? "Default Value" }}}"""
-    init 
-    |> add "fn" (fun () -> null)
-    |> fromText html
-    |> should equal ""
 
 [<Test>]
 let ``Supports fromTextSafe function``() =

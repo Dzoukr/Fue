@@ -42,6 +42,49 @@ let multiLineRecordWithPipedFunctionAndParameterVariable = "{
 }"
 
 
+module NullCoalesce =
+    [<Test>]
+    let ``Parses null coalesce operator with string literal on the left side`` () = 
+        " \"String Literal\" ?? \"Default\" "
+        |> parseTemplateValue 
+        |> should equal (TemplateValue.NullCoalesce(TemplateValue.Literal("String Literal"), TemplateValue.Literal("Default")))
+
+    [<Test>]
+    let ``Parses null coalesce operator with number literal on the left side`` () = 
+        " 0 ?? \"Default\" "
+        |> parseTemplateValue 
+        |> should equal (TemplateValue.NullCoalesce(TemplateValue.Literal(0), TemplateValue.Literal("Default")))
+
+    [<Test>]
+    let ``Parses null coalesce operator with simple value on the left side`` () = 
+        " var ?? \"Default\" "
+        |> parseTemplateValue 
+        |> should equal (TemplateValue.NullCoalesce(TemplateValue.SimpleValue("var"), TemplateValue.Literal("Default")))
+
+    [<Test>]
+    let ``Parses null coalesce operator with a function on the left side`` () = 
+        " fn() ?? \"Default\" "
+        |> parseTemplateValue 
+        |> should equal (TemplateValue.NullCoalesce(TemplateValue.Function("fn", []), TemplateValue.Literal("Default")))
+
+    [<Test>]
+    let ``Parses null coalesce operator with simple value on the right side`` () = 
+        " \"Default\" ?? var"
+        |> parseTemplateValue 
+        |> should equal (TemplateValue.NullCoalesce(TemplateValue.Literal("Default"), TemplateValue.SimpleValue("var")))
+
+    [<Test>]
+    let ``Parses null coalesce operator with a function on the right side`` () = 
+        " \"Default\" ?? fn() "
+        |> parseTemplateValue 
+        |> should equal (TemplateValue.NullCoalesce(TemplateValue.Literal("Default"), TemplateValue.Function("fn", [])))
+
+    [<Test>]
+    let ``Parses null coalesce operator as function parameter`` () = 
+        " fn(var ?? \"Default\") "
+        |> parseTemplateValue 
+        |> should equal (TemplateValue.Function("fn", [TemplateValue.NullCoalesce(TemplateValue.SimpleValue("var"), TemplateValue.Literal("Default"))]))
+
 
 [<Test>]
 let ``Parses simple value`` () = 
