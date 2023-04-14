@@ -238,6 +238,14 @@ let ``Compiles with Some directly`` () =
     |> should equal "<div>Ano</div>"
 
 [<Test>]
+let ``Compiles conditional for directives`` () = 
+    init 
+    |> add "y" ["";"a";"b";]
+    |> add "notEmpty" (String.IsNullOrWhiteSpace >> not)
+    |> fromText """<ul><li fs-if="notEmpty(x)" fs-for="x in y">{{{x}}}</li></ul>"""
+    |> should equal "<ul><li>a</li><li>b</li></ul>"
+
+[<Test>]
 let ``Compiles with None directly`` () = 
     init 
     |> add "value" { Name = "AAA"; Surname = None}

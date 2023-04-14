@@ -267,7 +267,7 @@ let parseTemplateValue text =
 
 let parseForCycleAttribute forAttr =
     match "(.+) in (.+)" ==> forAttr with
-    | TwoPartsMatch(item, source) -> ForCycle(item, source |> parseTemplateValue) |> Some
+    | TwoPartsMatch(item, source) -> (item, source) |> Some
     | _ -> None
 
 let parseUnionCaseAttribute caseAttr =
@@ -276,7 +276,17 @@ let parseUnionCaseAttribute caseAttr =
     | _ -> caseAttr, []
 
 let private getAttributeValue attr (node:HtmlNode) = Option.bind (fun (v:HtmlAttribute) -> v.Value |> Some) (node.TryGetAttribute(attr)) 
-let private (|ForCycle|_|) = getAttributeValue forAttr
+let private (|ConditionalForCycle|_|) (node:HtmlNode) =
+    match getAttributeValue forAttr node, getAttributeValue ifAttr node with
+    | Some forAttribute, Some ifAttribute ->
+        let condition = parseTemplateValue ifAttribute
+
+        parseForCycleAttribute forAttribute
+        |> Option.map (fun (item, source) ->
+            item, source |> parseTemplateValue, condition
+        )
+    | _, _ -> None
+let private (|ForCycle|_|) = getAttributeValue forAttr >> Option.bind parseForCycleAttribute
 let private (|IfCondition|_|) = getAttributeValue ifAttr
 let private (|ElseCondition|_|) = getAttributeValue elseAttr
 let private (|DiscriminatedUnion|_|) (node:HtmlNode) = 
@@ -286,8 +296,16 @@ let private (|DiscriminatedUnion|_|) (node:HtmlNode) =
 
 let parseNode (node:HtmlNode) = 
     match node with
-    | ForCycle(attr) -> parseForCycleAttribute(attr)
-    | IfCondition(attr) -> attr |> parseTemplateValue |> IfCondition |> Some
+    | ConditionalForCycle(item, source, condition) ->
+        ConditionalForCycle(item, source, condition) |> Some
+    | IfCondition(statement) ->
+        statement
+        |> parseTemplateValue
+        |> TemplateNode.IfCondition
+        |> Some        
+    | ForCycle(item, source) ->
+        ForCycle(item, source |> parseTemplateValue)
+        |> Some
     | ElseCondition(_) -> ElseCondition |> Some
     | DiscriminatedUnion(du, case) -> 
         let c, extr = case |> parseUnionCaseAttribute 

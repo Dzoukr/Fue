@@ -61,9 +61,12 @@ let private compileNode compileFun (source:HtmlNode) data attributesFilter =
         let attrs = source.Attributes |> prepareAttributes data attributesFilter
         Rop.bind2 (newElements source.OriginalName) elms attrs
 
-let private compileIf compileFun (source:HtmlNode) data boolValue =
+let private evaluateIf boolValue data =
     boolValue |> ValueCompiler.compile data
     >>= checkIsBool
+
+let private compileIf compileFun (source:HtmlNode) data boolValue =
+    evaluateIf boolValue data
     >>= (fun bValue -> if bValue then compileNode compileFun source data filterIf else [] |> success)
 
 let private compileElse compileFun (source:HtmlNode) data boolValue =
@@ -92,6 +95,35 @@ let private addForCycleItem name value data =
         else
             data |> add name value
     | false -> data |> add name value
+    
+let private compileConditionalForCycle compileFun (source:HtmlNode) data itemName cycle condition =
+    cycle |> ValueCompiler.compile data
+    >>= checkIsIterable
+    >>= (fun list ->
+        let length = Seq.length list
+        list
+        |> Seq.filter(fun itemValue ->
+            data
+            |> addForCycleItem itemName itemValue
+            |> evaluateIf condition
+            |> function
+            | Success shouldEvaluate -> shouldEvaluate
+            | Failure _ -> false
+        )
+        |> Seq.mapi (fun index itemValue ->
+            let iteration = index + 1
+            let dataWithItem =
+                data
+                //|> add itemName itemValue
+                |> addForCycleItem itemName itemValue
+                |> add "$index" index
+                |> add "$iteration" iteration
+                |> add "$length" length
+                |> add "$is-last" (length = iteration)
+                |> add "$is-not-last" (length <> iteration)
+            compileNode compileFun source dataWithItem (fun attr -> filterFor attr && filterIf attr)
+        ) |> Seq.toList |> Rop.fold
+    )
     
 let private compileForCycle compileFun (source:HtmlNode) data itemName cycle =
     cycle |> ValueCompiler.compile data
@@ -137,6 +169,7 @@ let private _compile compiler data (source:HtmlNode) =
         let compileIf = compileIf comp source data
         let compileElse = compileElse comp source data
         let compileForCycle = compileForCycle comp source data
+        let compileConditionalForCycle = compileConditionalForCycle comp source data
         let compileUnion = compileUnion comp source data
 
         Parser.parseNode(source)
@@ -152,6 +185,8 @@ let private _compile compiler data (source:HtmlNode) =
                     | Some(IfCondition(boolValue)) -> boolValue |> compileElse
                     | _ -> ElseConditionMustImmediatelyFollowIfCondition |> fail
                 )
+            | Some(ConditionalForCycle(itemName, cycle, conditition)) ->
+                compileConditionalForCycle itemName cycle conditition
             | Some(ForCycle(itemName, cycle)) -> compileForCycle itemName cycle
             | Some(DiscriminatedUnion(union,case,extracts)) -> compileUnion union case extracts
             | None ->
