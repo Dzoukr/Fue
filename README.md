@@ -273,6 +273,12 @@ let compiledHtml =
 // compiledHtml is "<li>A is 0, 1, 3</li><li>B is 1, 2, 3</li><li>C is 2, 3, 3</li>"
 ```
 
+Sometimes you don't want to render all items of a list.
+You can either prefilter the items `fs-for"i in filter(items)"` or alternatively you can combine `fs-for` with `fs-if`
+```fsharp
+let html = """<li fs-if"filter(i)" fs-for="i in items">{{{i}}} is {{{$index}}}, {{{$iteration}}}, {{{$length}}}</li>"""
+```
+
 Since version 1.2.0 there is support for tuples destructuring:
 
 ```fsharp

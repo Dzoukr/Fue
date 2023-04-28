@@ -445,21 +445,19 @@ let ``Parses simple value with white spaces`` () =
 let ``Parses for-cycle value`` () = 
     "x in y" 
     |> parseForCycleAttribute 
-    |> should equal (TemplateNode.ForCycle("x", TemplateValue.SimpleValue("y")) |> Some)
+    |> should equal (("x", "y") |> Some)
 
 [<Test>]
 let ``Parses for-cycle value with function`` () = 
     "x in y(z)" 
     |> parseForCycleAttribute 
-    |> should equal (TemplateNode.ForCycle("x", TemplateValue.Function("y", [TemplateValue.SimpleValue("z")])) |> Some)
+    |> should equal (("x", "y(z)") |> Some)
 
 [<Test>]
 let ``Parses for-cycle value with piped function`` () = 
     "x in y |> z 'lit'" 
     |> parseForCycleAttribute 
-    |> should equal (
-        TemplateNode.ForCycle("x", 
-            TemplateValue.Function("z", [TemplateValue.Literal("lit"); TemplateValue.SimpleValue("y")])) |> Some)
+    |> should equal (("x", "y |> z 'lit'") |> Some)
 
 [<Test>]
 let ``Does not parse illegal for-cycle value`` () = 
