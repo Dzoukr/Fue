@@ -48,6 +48,14 @@ Full example:
 let html = "<div>{{{name}}}</div>"
 let compiledHtml = init |> add "name" "Roman" |> fromText html
 // compiledHtml now contains "<div>Roman</div>"
+
+```
+To help prevent cross site scripting (XSS) you can use `fromTextSafe`.
+
+```fsharp
+let html = "<div>{{{name}}}</div>"
+let compiledHtml = init |> add "name" "<script>alert('hi')</script>" |> fromTextSafe html
+// compiledHtml is now "<div>&lt;script&gt;alert(&#39;hi&#39;)&lt;/script&gt;</div>"
 ```
 
 If a variable is not defined, it gets rendered as is - including the braces.
@@ -155,6 +163,7 @@ let compiledHtml =
     |> add "someValue" "myValue"
     |> fromFile "relative/or/absolute/path/to/file.html"
 ```
+There is also `fromFileSafe` you can use if you need to prevent XSS.
 
 ## Conditional rendering
 
