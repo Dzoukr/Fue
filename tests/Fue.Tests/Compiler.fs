@@ -304,6 +304,14 @@ let ``Ommites fs-template tag with if`` () =
     |> fromText """<fs-template fs-if="bool"><div>Yes</div></fs-template>"""
     |> should equal "<div>Yes</div>"
 
+[<Test>]
+let ``Conditional for directives count only rendered items`` () =
+    init
+    |> add "y" ["a";"";"b";""]
+    |> add "notEmpty" (String.IsNullOrWhiteSpace >> not)
+    |> fromText """<ul><li fs-if="notEmpty(x)" fs-for="x in y">{{{x}}} {{{$iteration}}}/{{{$length}}}<fs-template fs-if="$is-last">!</fs-template></li></ul>"""
+    |> should equal "<ul><li>a 1/2</li><li>b 2/2!</li></ul>"
+
 type Nested = {
     Value : int
 }
