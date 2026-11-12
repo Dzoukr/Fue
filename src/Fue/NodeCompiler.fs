@@ -100,16 +100,20 @@ let private compileConditionalForCycle compileFun (source:HtmlNode) data itemNam
     cycle |> ValueCompiler.compile data
     >>= checkIsIterable
     >>= (fun list ->
-        let length = Seq.length list
-        list
-        |> Seq.filter(fun itemValue ->
-            data
-            |> addForCycleItem itemName itemValue
-            |> evaluateIf condition
-            |> function
-            | Success shouldEvaluate -> shouldEvaluate
-            | Failure _ -> false
-        )
+        let included =
+            list
+            |> Seq.filter(fun itemValue ->
+                data
+                |> addForCycleItem itemName itemValue
+                |> evaluateIf condition
+                |> function
+                | Success shouldEvaluate -> shouldEvaluate
+                | Failure _ -> false
+            )
+            |> Seq.toList
+
+        let length = List.length included
+        included
         |> Seq.mapi (fun index itemValue ->
             let iteration = index + 1
             let dataWithItem =
