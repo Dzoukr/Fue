@@ -1,3 +1,10 @@
+### 2.3.0 - November 13 2026
+* Fixing versioning
+* Added support for default values with `??` operator (thanks @schwarzeszeux)
+* Added support for conditionally rendered for-cycles (thanks @schwarzeszeux)
+* Don't count unfiltered list before filtering (thanks @schwarzeszeux)
+* README fixes (thanks @Darkle)
+
 ### 2.0.0 - March 27 2023
 * New major version based on FsParsec
 

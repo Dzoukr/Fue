@@ -10,8 +10,8 @@
     <PackageIconUrl>https://avatars2.githubusercontent.com/u/851307?v=3&amp;s=64</PackageIconUrl>
     <PackageTags>fsharp;templating;templates</PackageTags>
     <Authors>Roman Provazník</Authors>
-    <Version>2.0.0</Version>
-    <PackageReleaseNotes>New major version based on FsParsec</PackageReleaseNotes>
+    <Version>2.3.0</Version>
+    <PackageReleaseNotes>Default values (??), conditionally rendered for-cycles, faster filtered lists</PackageReleaseNotes>
 
   </PropertyGroup>
   <ItemGroup>
